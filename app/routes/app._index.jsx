@@ -134,6 +134,13 @@ export default function Gallery() {
     }).length;
   };
 
+  const getLockStatus = (templateType, index) => {
+    if (index === 0 || templateType === "free") return false;
+    if (templateType === "starter") return currentPlan === "free";
+    if (templateType === "pro") return currentPlan === "free" || currentPlan === "starter";
+    return false;
+  };
+
 
   const renderCardForm = (template) => {
     switch (template.styleName) {
@@ -143,8 +150,9 @@ export default function Gallery() {
             <h2>{template.name}</h2>
             <p className="subtitle">{template.subtitle}</p>
             <div className="form-group">
-              <label>Email Address *</label>
+              <label htmlFor="newsletter-signup-email">Email Address *</label>
               <input
+                id="newsletter-signup-email"
                 type="email"
                 placeholder="alex@example.com"
                 value={formInputs["newsletter-signup-email"] || ""}
@@ -162,8 +170,9 @@ export default function Gallery() {
             <h2>{template.name}</h2>
             <p className="subtitle">{template.subtitle}</p>
             <div className="form-group">
-              <label>Your Name *</label>
+              <label htmlFor="customer-support-name">Your Name *</label>
               <input
+                id="customer-support-name"
                 type="text"
                 placeholder="Jane Doe"
                 value={formInputs["customer-support-name"] || ""}
@@ -171,8 +180,9 @@ export default function Gallery() {
               />
             </div>
             <div className="form-group">
-              <label>Email Address *</label>
+              <label htmlFor="customer-support-email">Email Address *</label>
               <input
+                id="customer-support-email"
                 type="email"
                 placeholder="jane.doe@example.com"
                 value={formInputs["customer-support-email"] || ""}
@@ -193,8 +203,9 @@ export default function Gallery() {
             </div>
             <div className="form-body" style={{ padding: "12px" }}>
               <div className="form-group">
-                <label>Full Name *</label>
+                <label htmlFor="job-application-name">Full Name *</label>
                 <input
+                  id="job-application-name"
                   type="text"
                   placeholder="E.g. John Smith"
                   value={formInputs["job-application-name"] || ""}
@@ -217,8 +228,9 @@ export default function Gallery() {
             </div>
             <form className="audit-form-container" style={{ padding: "16px" }} onSubmit={(e) => e.preventDefault()}>
               <div className="form-group">
-                <label>Location *</label>
+                <label htmlFor="audit-details-location">Location *</label>
                 <input
+                  id="audit-details-location"
                   type="text"
                   placeholder="Enter Location"
                   value={formInputs["audit-details-location"] || ""}
@@ -238,8 +250,9 @@ export default function Gallery() {
               <form className="saas-left" onSubmit={(e) => e.preventDefault()}>
                 <h3 style={{ fontSize: "14px", margin: 0 }}>Edit settings</h3>
                 <div className="form-group">
-                  <label>Name *</label>
+                  <label htmlFor="saas-settings-name">Name *</label>
                   <input
+                    id="saas-settings-name"
                     type="text"
                     placeholder="Burger Rings"
                     value={formInputs["saas-settings-name"] || ""}
@@ -258,8 +271,9 @@ export default function Gallery() {
           <form className="form-neon-rsvp" style={{ padding: "16px" }} onSubmit={(e) => e.preventDefault()}>
             <h2 style={{ fontSize: "14px" }}>{template.name}</h2>
             <div className="form-group">
-              <label>Full Name *</label>
+              <label htmlFor="neon-rsvp-name">Full Name *</label>
               <input
+                id="neon-rsvp-name"
                 type="text"
                 placeholder="Gavin Belson"
                 value={formInputs["neon-rsvp-name"] || ""}
@@ -276,8 +290,9 @@ export default function Gallery() {
           <form className="form-checkout-premium" onSubmit={(e) => e.preventDefault()}>
             <h2 style={{ fontSize: "14px" }}>{template.name}</h2>
             <div className="form-group">
-              <label>Recipient Name *</label>
+              <label htmlFor="checkout-order-customer_name">Recipient Name *</label>
               <input
+                id="checkout-order-customer_name"
                 type="text"
                 placeholder="Rich Hendrick"
                 value={formInputs["checkout-order-customer_name"] || ""}
@@ -297,8 +312,9 @@ export default function Gallery() {
             </div>
             <form className="csat-body" style={{ padding: "12px" }} onSubmit={(e) => e.preventDefault()}>
               <div className="form-group">
-                <label>Overall Experience *</label>
+                <label htmlFor="csat-feedback-rating">Overall Experience *</label>
                 <select
+                  id="csat-feedback-rating"
                   value={formInputs["csat-feedback-rating"] || "5 - Excellent 😊"}
                   onChange={(e) => handleValChange("csat-feedback-rating", e.target.value)}
                 >
@@ -320,8 +336,9 @@ export default function Gallery() {
           <form className="form-academy-signup" onSubmit={(e) => e.preventDefault()}>
             <h2 style={{ fontSize: "14px" }}>{template.name}</h2>
             <div className="form-group">
-              <label>Student Name *</label>
+              <label htmlFor="academy-signup-student_name">Student Name *</label>
               <input
+                id="academy-signup-student_name"
                 type="text"
                 placeholder="E.g. Richard Hendricks"
                 value={formInputs["academy-signup-student_name"] || ""}
@@ -335,17 +352,6 @@ export default function Gallery() {
         );
       default:
         return null;
-    }
-  };
-
-  const handleCTAClick = (template) => {
-    const isLocked = getLockStatus(template.type);
-    
-    if (!isLocked) {
-      navigate(`/app/templates/${template.id}`);
-    } else {
-      setShowUpgradeWarning(template);
-      shopify.toast.show(`Upgrade required to use "${template.name}".`, { isError: true });
     }
   };
 
@@ -465,7 +471,7 @@ export default function Gallery() {
           <div className="templates-grid">
             {filteredTemplates.map((template, index) => {
               const isFirstCard = index === 0;
-              const isLocked = !isFirstCard; // First card is unlocked, remaining are locked
+              const isLocked = getLockStatus(template.type, index);
               
               // Custom borders based on lock type
               let cardLockClass = "";

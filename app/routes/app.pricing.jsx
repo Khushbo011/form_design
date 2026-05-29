@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useLoaderData, Form, useNavigate, useNavigation } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import prisma from "../db.server";
@@ -75,6 +74,57 @@ export default function Pricing() {
 
       {/* 2-Plan Grid Layout */}
       <div className="plans-container" style={{ maxWidth: "800px" }}>
+
+        {/* FREE PLAN - $0 */}
+<div className={`plan-card ${currentPlan === "free" ? "active-plan" : ""}`}>
+  {currentPlan === "free" && (
+    <span className="plan-badge" style={{ background: "#22c55e" }}>
+      Active Plan
+    </span>
+  )}
+
+  <h2 className="plan-name">Free Plan</h2>
+
+  <div className="plan-price-box" style={{ color: "#22c55e" }}>
+    <span className="plan-price">$0</span>
+    <span className="plan-period">/ month</span>
+  </div>
+
+  <s-paragraph style={{ textAlign: "center", color: "#6d7175" }}>
+    Get started with one free form template.
+  </s-paragraph>
+
+  <ul className="plan-features-list">
+    <li className="plan-feature-item">
+      ✓ <strong>Unlock 1 Template</strong>
+    </li>
+
+    <li className="plan-feature-item disabled">
+      ✕ Additional Premium Templates
+    </li>
+
+    <li className="plan-feature-item disabled">
+      ✕ Advanced Builders
+    </li>
+
+    <li className="plan-feature-item disabled">
+      ✕ Pro Exclusive Forms
+    </li>
+  </ul>
+
+  <Form method="post">
+    <input type="hidden" name="plan" value="free" />
+    <button
+      type="submit"
+      className="plan-btn"
+      disabled={isSubmitting || currentPlan === "free"}
+    >
+      {currentPlan === "free"
+        ? "Current Free Plan"
+        : "Use Free Plan"}
+    </button>
+  </Form>
+</div>
         
         {/* STARTER PLAN - $49 */}
         <div className={`plan-card ${currentPlan === "starter" ? "active-plan" : ""}`}>

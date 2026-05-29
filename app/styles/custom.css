@@ -995,11 +995,15 @@ a {
 }
 
 .saas-tab {
+  appearance: none;
+  background: transparent;
+  border: 0;
   padding: 14px 20px;
   font-size: 13px;
   font-weight: 600;
   color: #64748b;
   border-bottom: 2px solid transparent;
+  cursor: pointer;
 }
 
 .saas-tab.active {

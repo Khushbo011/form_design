@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLoaderData, useParams, useNavigate, Form, useNavigation } from "react-router";
+import { useLoaderData, useNavigate, Form, useNavigation } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import prisma from "../db.server";
 import { authenticate } from "../shopify.server";
@@ -339,18 +339,20 @@ export default function TemplateDetail() {
               {template.styleName === "saas-dashboard" && (
                 <div className="saas-wrapper">
                   <div className="saas-tabs">
-                    <div 
+                    <button
+                      type="button"
                       className={`saas-tab ${activeSasaTab === "about" ? "active" : ""}`}
                       onClick={() => setActiveSasaTab("about")}
                     >
                       About
-                    </div>
-                    <div 
+                    </button>
+                    <button
+                      type="button"
                       className="saas-tab"
                       onClick={() => shopify.toast.show("Customizer modifier settings unlocked.", { isError: false })}
                     >
                       Modifiers
-                    </div>
+                    </button>
                   </div>
 
                   <div className="saas-grid">
