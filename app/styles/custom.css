@@ -139,7 +139,7 @@ a {
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
-  height: 520px; /* Locked height so they look consistent in grid */
+  height: 550px; /* Locked height so they look consistent in grid */
   position: relative;
 }
 

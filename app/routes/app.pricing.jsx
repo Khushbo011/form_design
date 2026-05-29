@@ -30,7 +30,7 @@ export const loader = async ({ request }) => {
   // Persist synced plan details in database
   const subscription = await prisma.storeSubscription.upsert({
     where: { shop },
-    update: { 
+    update: {
       plan: activePlan,
       billingStatus: "active",
       email: session.email || "",
@@ -69,7 +69,7 @@ export const action = async ({ request }) => {
   if (requestedPlan === "free") {
     const updatedSubscription = await prisma.storeSubscription.upsert({
       where: { shop },
-      update: { 
+      update: {
         plan: "free",
         billingStatus: "active",
       },
@@ -86,7 +86,8 @@ export const action = async ({ request }) => {
   }
 
   const planName = requestedPlan === "pro" ? PLAN_PRO : PLAN_STARTER;
-  const returnUrl = `${process.env.SHOPIFY_APP_URL || "https://formdesign.androgamesinfotech.tech"}/app/pricing?plan=${requestedPlan}`;
+  const appUrl = process.env.SHOPIFY_APP_URL || "https://formdesign.androgamesinfotech.tech";
+  const returnUrl = `${appUrl}/app/pricing?plan=${requestedPlan}`;
 
   throw await billing.request({
     plan: planName,
@@ -123,56 +124,56 @@ export default function Pricing() {
       <div className="plans-container" style={{ maxWidth: "800px" }}>
 
         {/* FREE PLAN - $0 */}
-<div className={`plan-card ${currentPlan === "free" ? "active-plan" : ""}`}>
-  {currentPlan === "free" && (
-    <span className="plan-badge" style={{ background: "#22c55e" }}>
-      Active Plan
-    </span>
-  )}
+        <div className={`plan-card ${currentPlan === "free" ? "active-plan" : ""}`}>
+          {currentPlan === "free" && (
+            <span className="plan-badge" style={{ background: "#22c55e" }}>
+              Active Plan
+            </span>
+          )}
 
-  <h2 className="plan-name">Free Plan</h2>
+          <h2 className="plan-name">Free Plan</h2>
 
-  <div className="plan-price-box" style={{ color: "#22c55e" }}>
-    <span className="plan-price">$0</span>
-    <span className="plan-period">/ month</span>
-  </div>
+          <div className="plan-price-box" style={{ color: "#22c55e" }}>
+            <span className="plan-price">$0</span>
+            <span className="plan-period">/ month</span>
+          </div>
 
-  <s-paragraph style={{ textAlign: "center", color: "#6d7175" }}>
-    Get started with one free form template.
-  </s-paragraph>
+          <s-paragraph style={{ textAlign: "center", color: "#6d7175" }}>
+            Get started with one free form template.
+          </s-paragraph>
 
-  <ul className="plan-features-list">
-    <li className="plan-feature-item">
-      ✓ <strong>Unlock 4 Template</strong>
-    </li>
+          <ul className="plan-features-list">
+            <li className="plan-feature-item">
+              ✓ <strong>Unlock 4 Template</strong>
+            </li>
 
-    <li className="plan-feature-item disabled">
-      ✕ Additional Premium Templates
-    </li>
+            <li className="plan-feature-item disabled">
+              ✕ Additional Premium Templates
+            </li>
 
-    <li className="plan-feature-item disabled">
-      ✕ Advanced Builders
-    </li>
+            <li className="plan-feature-item disabled">
+              ✕ Advanced Builders
+            </li>
 
-    <li className="plan-feature-item disabled">
-      ✕ Pro Exclusive Forms
-    </li>
-  </ul>
+            <li className="plan-feature-item disabled">
+              ✕ Pro Exclusive Forms
+            </li>
+          </ul>
 
-  <Form method="post">
-    <input type="hidden" name="plan" value="free" />
-    <button
-      type="submit"
-      className="plan-btn"
-      disabled={isSubmitting || currentPlan === "free"}
-    >
-      {currentPlan === "free"
-        ? "Current Free Plan"
-        : "Use Free Plan"}
-    </button>
-  </Form>
-</div>
-        
+          <Form method="post">
+            <input type="hidden" name="plan" value="free" />
+            <button
+              type="submit"
+              className="plan-btn"
+              disabled={isSubmitting || currentPlan === "free"}
+            >
+              {currentPlan === "free"
+                ? "Current Free Plan"
+                : "Use Free Plan"}
+            </button>
+          </Form>
+        </div>
+
         {/* STARTER PLAN - $49 */}
         <div className={`plan-card ${currentPlan === "starter" ? "active-plan" : ""}`}>
           {currentPlan === "starter" && (
@@ -229,8 +230,8 @@ export default function Pricing() {
 
           <Form method="post">
             <input type="hidden" name="plan" value="starter" />
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="plan-btn starter-btn"
               disabled={isSubmitting || currentPlan === "starter"}
               onClick={() => handleAlert("Starter")}
@@ -294,8 +295,8 @@ export default function Pricing() {
 
           <Form method="post">
             <input type="hidden" name="plan" value="pro" />
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="plan-btn pro-btn"
               disabled={isSubmitting || currentPlan === "pro"}
               onClick={() => handleAlert("Pro")}
@@ -312,8 +313,8 @@ export default function Pricing() {
           <div style={{ textAlign: "center", marginTop: "16px" }}>
             <Form method="post">
               <input type="hidden" name="plan" value="free" />
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 style={{ background: "none", border: "none", color: "#6d7175", textDecoration: "underline", fontSize: "13px" }}
                 disabled={isSubmitting}
               >

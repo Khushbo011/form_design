@@ -523,7 +523,7 @@ export default function Gallery() {
                     <h3 className="template-title">{template.name}</h3>
                     <p className="template-desc">{template.description}</p>
                     
-                    <div className="template-footer">
+                    <div className="template-footer" style={{ flexWrap: "wrap", gap: "8px" }}>
                       <button 
                         type="button" 
                         className="preview-link-btn"
@@ -531,6 +531,16 @@ export default function Gallery() {
                       >
                         Full Page Preview
                       </button>
+
+                      {currentPlan !== "pro" && (
+                        <button
+                          type="button"
+                          className="btn-upgrade-pro"
+                          onClick={() => navigate("/app/pricing")}
+                        >
+                          Upgrade to Pro
+                        </button>
+                      )}
 
                       {/* Access logic buttons */}
                       {!isLocked ? (
