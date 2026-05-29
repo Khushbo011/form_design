@@ -2,7 +2,7 @@
 
 client_id = "c4c947cc674a7d122dc9c4aa38730fd3"
 name = "form_design"
-application_url = "https://form-design-opal.vercel.app"
+application_url = "https://formdesign.androgamesinfotech.tech"
 embedded = true
 
 [webhooks]
@@ -13,7 +13,7 @@ api_version = "2026-07"
 scopes = "write_metaobject_definitions,write_metaobjects,write_products"
 
 [auth]
-redirect_urls = [ "https://form-design-opal.vercel.app/auth/callback" ]
+redirect_urls = [ "https://formdesign.androgamesinfotech.tech/auth/callback" ]
 
 [build]
 include_config_on_deploy = true

@@ -1,40 +1,44 @@
-import { useLoaderData, Form, useNavigate, useNavigation } from "react-router";
+import { useLoaderData, Form, useNavigate, useNavigation, redirect } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import prisma from "../db.server";
-import { authenticate } from "../shopify.server";
+import { authenticate, PLAN_STARTER, PLAN_PRO } from "../shopify.server";
 
 export const loader = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, billing } = await authenticate.admin(request);
   const shop = session.shop;
 
-  // Retrieve current subscription plan from DB
-  const subscription = await prisma.storeSubscription.findUnique({
-    where: { shop },
+  // Sync active Shopify Billing plans to DB
+  const billingCheck = await billing.check({
+    plans: [PLAN_STARTER, PLAN_PRO],
+    isTest: true,
   });
 
-  return {
-    shop,
-    plan: subscription ? subscription.plan : "free",
-  };
-};
+  let activePlan = "free";
+  if (billingCheck.hasActivePayment && billingCheck.appSubscriptions && billingCheck.appSubscriptions.length > 0) {
+    const activeSub = billingCheck.appSubscriptions.find(
+      (sub) => sub.status === "ACTIVE" || sub.status === "active"
+    );
+    if (activeSub) {
+      if (activeSub.name === PLAN_PRO) {
+        activePlan = "pro";
+      } else if (activeSub.name === PLAN_STARTER) {
+        activePlan = "starter";
+      }
+    }
+  }
 
-export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
-  const shop = session.shop;
-
-  const formData = await request.formData();
-  const requestedPlan = formData.get("plan"); // "free", "starter", "pro"
-
-  // Upsert plan details to ensure database persistence
-  const updatedSubscription = await prisma.storeSubscription.upsert({
+  // Persist synced plan details in database
+  const subscription = await prisma.storeSubscription.upsert({
     where: { shop },
     update: { 
-      plan: requestedPlan,
+      plan: activePlan,
       billingStatus: "active",
+      email: session.email || "",
+      ownerName: session.firstName ? `${session.firstName} ${session.lastName || ""}`.trim() : "",
     },
     create: {
       shop,
-      plan: requestedPlan,
+      plan: activePlan,
       billingStatus: "active",
       email: session.email || "",
       ownerName: session.firstName ? `${session.firstName} ${session.lastName || ""}`.trim() : "",
@@ -42,10 +46,53 @@ export const action = async ({ request }) => {
     },
   });
 
-  return { 
-    success: true, 
-    plan: updatedSubscription.plan 
+  // Redirect to App Home Dashboard if user returned with the active plan they selected
+  const url = new URL(request.url);
+  const planQuery = url.searchParams.get("plan");
+  if (planQuery && subscription.plan === planQuery) {
+    throw redirect("/app");
+  }
+
+  return {
+    shop,
+    plan: subscription.plan,
   };
+};
+
+export const action = async ({ request }) => {
+  const { session, billing } = await authenticate.admin(request);
+  const shop = session.shop;
+
+  const formData = await request.formData();
+  const requestedPlan = formData.get("plan"); // "free", "starter", "pro"
+
+  if (requestedPlan === "free") {
+    const updatedSubscription = await prisma.storeSubscription.upsert({
+      where: { shop },
+      update: { 
+        plan: "free",
+        billingStatus: "active",
+      },
+      create: {
+        shop,
+        plan: "free",
+        billingStatus: "active",
+        email: session.email || "",
+        ownerName: session.firstName ? `${session.firstName} ${session.lastName || ""}`.trim() : "",
+        shopName: session.shop,
+      },
+    });
+    return redirect("/app");
+  }
+
+  const planName = requestedPlan === "pro" ? PLAN_PRO : PLAN_STARTER;
+  const returnUrl = `${process.env.SHOPIFY_APP_URL || "https://formdesign.androgamesinfotech.tech"}/app/pricing?plan=${requestedPlan}`;
+
+  throw await billing.request({
+    plan: planName,
+    isTest: true,
+    returnUrl,
+  });
 };
 
 export default function Pricing() {
@@ -96,7 +143,7 @@ export default function Pricing() {
 
   <ul className="plan-features-list">
     <li className="plan-feature-item">
-      ✓ <strong>Unlock 1 Template</strong>
+      ✓ <strong>Unlock 4 Template</strong>
     </li>
 
     <li className="plan-feature-item disabled">

@@ -2,20 +2,54 @@ import { useState } from "react";
 import { useLoaderData, useNavigate, Form, useNavigation } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import prisma from "../db.server";
-import { authenticate } from "../shopify.server";
+import { authenticate, PLAN_STARTER, PLAN_PRO } from "../shopify.server";
 import { FORM_TEMPLATES } from "../templatesData";
 
 export const loader = async ({ request, params }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, billing } = await authenticate.admin(request);
   const shop = session.shop;
   const templateId = params.id;
 
-  // Retrieve current subscription plan from DB
-  const subscription = await prisma.storeSubscription.findUnique({
-    where: { shop },
+  // Sync active Shopify Billing plans to DB
+  const billingCheck = await billing.check({
+    plans: [PLAN_STARTER, PLAN_PRO],
+    isTest: true,
   });
 
-  const plan = subscription ? subscription.plan : "free";
+  let activePlan = "free";
+  if (billingCheck.hasActivePayment && billingCheck.appSubscriptions && billingCheck.appSubscriptions.length > 0) {
+    const activeSub = billingCheck.appSubscriptions.find(
+      (sub) => sub.status === "ACTIVE" || sub.status === "active"
+    );
+    if (activeSub) {
+      if (activeSub.name === PLAN_PRO) {
+        activePlan = "pro";
+      } else if (activeSub.name === PLAN_STARTER) {
+        activePlan = "starter";
+      }
+    }
+  }
+
+  // Find or create/update subscription in the database
+  const subscription = await prisma.storeSubscription.upsert({
+    where: { shop },
+    update: { 
+      plan: activePlan,
+      billingStatus: "active",
+      email: session.email || "",
+      ownerName: session.firstName ? `${session.firstName} ${session.lastName || ""}`.trim() : "",
+    },
+    create: {
+      shop,
+      plan: activePlan,
+      billingStatus: "active",
+      email: session.email || "",
+      ownerName: session.firstName ? `${session.firstName} ${session.lastName || ""}`.trim() : "",
+      shopName: session.shop,
+    },
+  });
+
+  const plan = subscription.plan || "free";
 
   // Find template data
   const template = FORM_TEMPLATES.find((t) => t.id === templateId);

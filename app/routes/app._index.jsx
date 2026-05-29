@@ -2,38 +2,51 @@ import { useState } from "react";
 import { useLoaderData, useNavigate, Form } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import prisma from "../db.server";
-import { authenticate } from "../shopify.server";
+import { authenticate, PLAN_STARTER, PLAN_PRO } from "../shopify.server";
 import { FORM_TEMPLATES } from "../templatesData";
 
 export const loader = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, billing } = await authenticate.admin(request);
   const shop = session.shop;
 
-  // Find or create subscription in the SQLite database
-  let subscription = await prisma.storeSubscription.findUnique({
-    where: { shop },
+  // Sync active Shopify Billing plans to DB
+  const billingCheck = await billing.check({
+    plans: [PLAN_STARTER, PLAN_PRO],
+    isTest: true,
   });
 
-  if (!subscription) {
-    subscription = await prisma.storeSubscription.create({
-      data: {
-        shop,
-        plan: "free",
-        email: session.email || "",
-        ownerName: session.firstName ? `${session.firstName} ${session.lastName || ""}`.trim() : "",
-        shopName: session.shop,
-      },
-    });
-  } else {
-    // Keep user info fresh in the DB
-    await prisma.storeSubscription.update({
-      where: { shop },
-      data: {
-        email: session.email || subscription.email,
-        ownerName: session.firstName ? `${session.firstName} ${session.lastName || ""}`.trim() : subscription.ownerName,
+  let activePlan = "free";
+  if (billingCheck.hasActivePayment && billingCheck.appSubscriptions && billingCheck.appSubscriptions.length > 0) {
+    const activeSub = billingCheck.appSubscriptions.find(
+      (sub) => sub.status === "ACTIVE" || sub.status === "active"
+    );
+    if (activeSub) {
+      if (activeSub.name === PLAN_PRO) {
+        activePlan = "pro";
+      } else if (activeSub.name === PLAN_STARTER) {
+        activePlan = "starter";
       }
-    });
+    }
   }
+
+  // Find or create/update subscription in the database
+  const subscription = await prisma.storeSubscription.upsert({
+    where: { shop },
+    update: { 
+      plan: activePlan,
+      billingStatus: "active",
+      email: session.email || "",
+      ownerName: session.firstName ? `${session.firstName} ${session.lastName || ""}`.trim() : "",
+    },
+    create: {
+      shop,
+      plan: activePlan,
+      billingStatus: "active",
+      email: session.email || "",
+      ownerName: session.firstName ? `${session.firstName} ${session.lastName || ""}`.trim() : "",
+      shopName: session.shop,
+    },
+  });
 
   return {
     shop,

@@ -3,6 +3,7 @@ import {
   ApiVersion,
   AppDistribution,
   shopifyApp,
+  BillingInterval,
 } from "@shopify/shopify-app-react-router/server";
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
@@ -25,6 +26,9 @@ if (missingConfig.length > 0) {
   );
 }
 
+export const PLAN_STARTER = "Starter Plan";
+export const PLAN_PRO = "Pro Plan";
+
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
@@ -40,6 +44,18 @@ const shopify = shopifyApp({
   ...(process.env.SHOP_CUSTOM_DOMAIN
     ? { customShopDomains: [process.env.SHOP_CUSTOM_DOMAIN] }
     : {}),
+  billing: {
+    [PLAN_STARTER]: {
+      amount: 49.0,
+      currencyCode: 'USD',
+      interval: BillingInterval.Every30Days,
+    },
+    [PLAN_PRO]: {
+      amount: 99.0,
+      currencyCode: 'USD',
+      interval: BillingInterval.Every30Days,
+    },
+  },
 });
 
 export default shopify;

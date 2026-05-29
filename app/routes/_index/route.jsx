@@ -13,129 +13,160 @@ export const loader = async ({ request }) => {
 
 export default function App() {
   const { showForm } = useLoaderData();
+  
   const features = [
     {
-      title: "Drag & Drop Builder",
-      description:
-        "Compose polished hero sections with reusable blocks, campaign presets, and smooth controls.",
+      title: "Drag & Drop Form Builder",
+      description: "Visual controls to design, arrange, and edit form fields in real-time.",
       icon: (
-        <svg
-          aria-hidden="true"
-          className="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth="1.8"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"
-          />
+        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v16.5h16.5V3.75H3.75Zm5.25 6h6m-6 3.75h6m-6 3.75h3.75" />
         </svg>
       ),
     },
     {
-      title: "Fast Shopify Integration",
-      description:
-        "Connect your store and publish campaign-ready sections without touching theme code.",
+      title: "No Coding Required",
+      description: "Build clean, professional store forms in minutes without touching theme liquid code.",
       icon: (
-        <svg
-          aria-hidden="true"
-          className="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth="1.8"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="m13 2-9 12h7l-1 8 10-13h-7l1-7Z"
-          />
+        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5" />
         </svg>
       ),
     },
     {
-      title: "Mobile Responsive Design",
-      description:
-        "Launch sections that stay sharp, fast, and conversion-focused across every screen.",
+      title: "Shopify Integrated",
+      description: "Sync submission data, contacts, and customer profiles straight into your store database.",
       icon: (
-        <svg
-          aria-hidden="true"
-          className="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth="1.8"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M10 18h4M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"
-          />
+        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 0 0 3.75-.615 3.001 3.001 0 0 0 3.75.615 3.001 3.001 0 0 0 3.75-.615 3.001 3.001 0 0 0 3.75.615 3.001 3.001 0 0 0 3.75-.615m-15 0h15M2.25 9.35 12 2.75l9.75 6.6" />
+        </svg>
+      ),
+    },
+    {
+      title: "Responsive Design",
+      description: "Forms automatically adapt to look clean, fast, and optimized on any mobile screen.",
+      icon: (
+        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-6 18h9" />
+        </svg>
+      ),
+    },
+    {
+      title: "Custom Styling",
+      description: "Tailor styles, input colors, button fields, layouts, and fonts to match your store branding.",
+      icon: (
+        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122A3 3 0 0 0 10.5 21.5h3.75a3 3 0 0 0 .97-5.378m-5.69-1.242a8.995 8.995 0 0 1-2.03-3.63m7.72 3.63a8.996 8.996 0 0 0 2.03-3.63m-9.75-3.63A8.969 8.969 0 0 1 12 3c1.726 0 3.298.486 4.63 1.33m-9.75 3.63H17.25m-9.75 3.63H17.25" />
+        </svg>
+      ),
+    },
+    {
+      title: "Instant Deployment",
+      description: "Activate forms in your live theme pages instantly with a single toggle.",
+      icon: (
+        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 0 1-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 0 0 6.16-12.12A14.98 14.98 0 0 0 9.63 8.41a14.97 14.97 0 0 0-2.58 5.84m8.54-1.88a14.99 14.99 0 0 0-8.54 1.88m0 0A14.98 14.98 0 0 0 2.37 21.63a14.98 14.98 0 0 0 12.12-6.16m-4.8-1.1a14.96 14.96 0 0 0-5.84-2.58" />
         </svg>
       ),
     },
   ];
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[#02040a] text-white antialiased">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(37,99,235,0.38),transparent_28%),radial-gradient(circle_at_78%_18%,rgba(168,85,247,0.34),transparent_26%),radial-gradient(circle_at_50%_70%,rgba(20,184,166,0.14),transparent_34%),linear-gradient(180deg,#02040a_0%,#070a16_50%,#02040a_100%)]" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent" />
-      <div className="pointer-events-none absolute left-1/2 top-4 h-80 w-[42rem] -translate-x-1/2 rounded-full bg-blue-500/20 blur-3xl" />
-      <div className="pointer-events-none absolute -right-24 top-1/3 h-80 w-80 rounded-full bg-violet-600/20 blur-3xl" />
+    <div className="min-h-screen overflow-hidden bg-[#030611] text-white antialiased">
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes pulse-slow {
+          0%, 100% { opacity: 0.6; transform: scale(1); }
+          50% { opacity: 0.8; transform: scale(1.05); }
+        }
+        @keyframes glow-line {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        .animate-pulse-slow {
+          animation: pulse-slow 8s infinite ease-in-out;
+        }
+        .glow-border:focus-within {
+          border-color: rgba(16, 185, 129, 0.4);
+          box-shadow: 0 0 25px rgba(16, 185, 129, 0.15);
+        }
+      `}} />
+      
+      {/* Background gradients */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(16,185,129,0.22),transparent_25%),radial-gradient(circle_at_85%_20%,rgba(59,130,246,0.22),transparent_25%),radial-gradient(circle_at_50%_75%,rgba(139,92,246,0.12),transparent_35%),linear-gradient(180deg,#030611_0%,#090f2b_55%,#030611_100%)]" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/60 to-transparent" />
+        <div className="absolute left-1/2 top-10 h-96 w-[48rem] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-3xl animate-pulse-slow" />
+      </div>
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 sm:px-6 lg:px-8">
+        
+        {/* Navigation */}
         <nav className="flex items-center justify-between py-5 sm:py-7">
           <a href="/" className="group flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/15 bg-white/10 shadow-2xl shadow-blue-950/40 backdrop-blur-xl">
-              <span className="h-5 w-5 rounded-lg bg-gradient-to-br from-emerald-300 via-sky-400 to-violet-500 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110" />
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] shadow-2xl backdrop-blur-xl transition duration-300 group-hover:border-emerald-500/30">
+              <svg className="h-6 w-6" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#10B981" />
+                    <stop offset="50%" stopColor="#3B82F6" />
+                    <stop offset="100%" stopColor="#8B5CF6" />
+                  </linearGradient>
+                </defs>
+                <rect x="3" y="3" width="26" height="26" rx="6" stroke="url(#logo-grad)" strokeWidth="2.5" fill="none" />
+                <path d="M9 10H23" stroke="url(#logo-grad)" strokeWidth="2.5" strokeLinecap="round"/>
+                <path d="M9 16H23" stroke="url(#logo-grad)" strokeWidth="2.5" strokeLinecap="round"/>
+                <path d="M9 22H17" stroke="url(#logo-grad)" strokeWidth="2.5" strokeLinecap="round"/>
+                <circle cx="23" cy="22" r="2.5" fill="#10B981" />
+              </svg>
             </span>
-            <span className="text-sm font-semibold tracking-wide text-white sm:text-base">
-              HeroCraft
+            <span className="text-base font-extrabold tracking-tight text-white transition duration-300 group-hover:text-emerald-400">
+              Form Design
             </span>
           </a>
 
           {showForm && (
             <a
-              className="hidden rounded-full border border-white/15 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white shadow-sm backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/15 hover:shadow-lg hover:shadow-blue-500/20 sm:block"
+              className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2 text-sm font-semibold text-white shadow-sm backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:border-emerald-500/40 hover:bg-emerald-500/10 hover:shadow-lg hover:shadow-emerald-500/10"
               href="#login"
             >
-              Login
+              Sign In
             </a>
           )}
         </nav>
 
-        <main className="flex flex-1 flex-col py-10 sm:py-14 lg:py-16">
-          <section className="grid min-h-[calc(100vh-190px)] items-center gap-12 lg:grid-cols-[1.02fr_0.98fr]">
-            <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center lg:items-start lg:text-left">
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.07] px-4 py-2 text-xs font-medium text-slate-300 shadow-2xl shadow-violet-950/20 backdrop-blur-xl">
-                <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_18px_rgba(110,231,183,0.9)]" />
-                Shopify hero builder for premium stores
+        {/* Hero Section */}
+        <main className="flex flex-1 flex-col py-8 sm:py-12 lg:py-16">
+          <section className="grid min-h-[calc(100vh-220px)] items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] pb-16">
+            
+            {/* Left Content */}
+            <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-2 text-xs font-semibold text-emerald-300 shadow-2xl backdrop-blur-xl">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.9)]" />
+                Premium Shopify Form Builder App
               </div>
 
-              <h1 className="max-w-4xl text-balance text-5xl font-black leading-[1.02] tracking-normal text-white sm:text-6xl lg:text-7xl">
-                Create Premium Shopify Hero Sections
+              <h1 className="max-w-3xl text-balance text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-6xl">
+                Create Professional Shopify Forms <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-blue-400 bg-clip-text text-transparent">Without Coding</span>
               </h1>
-              <p className="mt-6 max-w-2xl text-pretty text-base leading-8 text-slate-300 sm:text-xl">
-                Design stunning animated hero sections for your Shopify store in
-                minutes.
+              
+              <p className="mt-5 max-w-xl text-pretty text-base leading-7 text-slate-300 sm:text-lg">
+                Build contact forms, registration forms, lead generation forms, and custom store forms in minutes.
               </p>
 
               {showForm && (
                 <Form
                   id="login"
-                  className="mt-10 w-full max-w-2xl rounded-[1.75rem] border border-white/10 bg-white/[0.08] p-3 shadow-2xl shadow-violet-950/30 backdrop-blur-xl transition duration-300 hover:border-white/20"
+                  className="mt-8 w-full max-w-2xl rounded-3xl border border-white/10 bg-white/[0.04] p-2.5 shadow-2xl shadow-emerald-950/10 backdrop-blur-xl transition duration-300 hover:border-emerald-500/20 focus-within:border-emerald-500/30"
                   method="post"
                   action="/auth/login"
                 >
-                  <div className="flex flex-col gap-3 sm:flex-row">
+                  <div className="flex flex-col gap-2.5 sm:flex-row">
                     <label className="sr-only" htmlFor="shop">
-                      Shop domain
+                      Shopify Store Domain
                     </label>
-                    <div className="flex min-w-0 flex-1 items-center rounded-2xl border border-white/10 bg-black/40 px-4 py-3 transition duration-300 focus-within:border-cyan-300/60 focus-within:bg-black/55 focus-within:shadow-[0_0_0_4px_rgba(34,211,238,0.14)]">
-                      <span className="mr-3 text-sm font-medium text-slate-500">
+                    
+                    <div className="glow-border flex min-w-0 flex-1 items-center rounded-2xl border border-white/5 bg-black/30 px-4 py-3.5 transition duration-300">
+                      <span className="mr-2 text-sm font-semibold text-slate-500 select-none">
                         https://
                       </span>
                       <input
@@ -143,112 +174,147 @@ export default function App() {
                         className="min-w-0 flex-1 bg-transparent text-base text-white outline-none placeholder:text-slate-500"
                         type="text"
                         name="shop"
-                        placeholder="my-shop-domain.myshopify.com"
+                        placeholder="your-store.myshopify.com"
+                        required
                       />
                     </div>
+                    
                     <button
-                      className="rounded-2xl bg-gradient-to-r from-violet-500 via-blue-500 to-cyan-400 px-8 py-4 text-sm font-bold text-white shadow-lg shadow-blue-950/40 transition duration-300 hover:-translate-y-0.5 hover:shadow-blue-500/30 focus:outline-none focus:ring-4 focus:ring-cyan-400/25"
+                      className="cursor-pointer rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 px-7 py-4 text-sm font-bold text-white shadow-lg shadow-emerald-500/10 transition duration-300 hover:-translate-y-0.5 hover:shadow-emerald-500/25 focus:outline-none focus:ring-2 focus:ring-emerald-400"
                       type="submit"
                     >
-                      Login
+                      Start Building Forms
                     </button>
                   </div>
                 </Form>
               )}
 
-              <div className="mt-7 flex flex-wrap justify-center gap-3 text-xs font-medium text-slate-400 lg:justify-start">
-                <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5">
-                  No-code sections
+              <div className="mt-6 flex flex-wrap justify-center gap-2.5 text-xs font-semibold text-slate-400 lg:justify-start">
+                <span className="rounded-full border border-white/5 bg-white/[0.03] px-3.5 py-1.5 backdrop-blur-sm">
+                  ✓ Unlimited Responses
                 </span>
-                <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5">
-                  Animated layouts
+                <span className="rounded-full border border-white/5 bg-white/[0.03] px-3.5 py-1.5 backdrop-blur-sm">
+                  ✓ Custom CSS Variables
                 </span>
-                <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5">
-                  Shopify ready
+                <span className="rounded-full border border-white/5 bg-white/[0.03] px-3.5 py-1.5 backdrop-blur-sm">
+                  ✓ Auto-Tagging
                 </span>
               </div>
             </div>
 
-            <div className="relative mx-auto w-full max-w-xl lg:max-w-none">
-              <div className="absolute -inset-6 rounded-[2rem] bg-gradient-to-br from-cyan-400/20 via-blue-500/10 to-violet-500/20 blur-2xl" />
-              <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.08] p-4 shadow-2xl shadow-black/40 backdrop-blur-2xl">
-                <div className="flex items-center justify-between border-b border-white/10 px-2 pb-4">
+            {/* Right Interactive Visual Mockup */}
+            <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
+              <div className="absolute -inset-6 rounded-[2.5rem] bg-gradient-to-tr from-emerald-500/15 via-blue-500/5 to-purple-500/15 blur-2xl animate-pulse-slow" />
+              
+              <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-3 shadow-3xl shadow-black/50 backdrop-blur-3xl">
+                
+                {/* Visual Builder Header bar */}
+                <div className="flex items-center justify-between border-b border-white/5 px-2 pb-3 mb-3">
                   <div className="flex gap-2">
-                    <span className="h-3 w-3 rounded-full bg-rose-400" />
-                    <span className="h-3 w-3 rounded-full bg-amber-300" />
-                    <span className="h-3 w-3 rounded-full bg-emerald-300" />
+                    <span className="h-3 w-3 rounded-full bg-[#ff5f56]" />
+                    <span className="h-3 w-3 rounded-full bg-[#ffbd2e]" />
+                    <span className="h-3 w-3 rounded-full bg-[#27c93f]" />
                   </div>
-                  <span className="rounded-full bg-emerald-300/10 px-3 py-1 text-xs font-semibold text-emerald-200">
-                    Live hero preview
+                  <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-bold text-emerald-300 border border-emerald-500/20">
+                    Form Design Live Canvas
                   </span>
                 </div>
 
-                <div className="mt-4 rounded-[1.5rem] border border-white/10 bg-[#07111f] p-5">
-                  <div className="rounded-[1.25rem] bg-gradient-to-br from-slate-950 via-blue-950 to-violet-950 p-6">
-                    <div className="mb-10 flex items-center justify-between">
-                      <div className="h-3 w-24 rounded-full bg-white/25" />
-                      <div className="flex gap-2">
-                        <div className="h-3 w-10 rounded-full bg-white/15" />
-                        <div className="h-3 w-10 rounded-full bg-white/15" />
-                      </div>
+                {/* Main Simulator split view */}
+                <div className="grid grid-cols-[120px_1fr] gap-3 rounded-2xl bg-[#070b19] p-3">
+                  
+                  {/* Left Mock Builder Controls */}
+                  <div className="flex flex-col gap-2 border-r border-white/5 pr-2.5">
+                    <div className="text-[10px] font-bold text-slate-500 tracking-wider uppercase mb-1">Field Blocks</div>
+                    
+                    <div className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] p-2 border border-white/5 text-[9px] text-slate-300">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                      Text Input
                     </div>
-                    <div className="max-w-sm">
-                      <div className="mb-3 h-3 w-28 rounded-full bg-cyan-300/70" />
-                      <div className="mb-3 h-8 w-full rounded-lg bg-white/90" />
-                      <div className="mb-6 h-8 w-3/4 rounded-lg bg-white/70" />
-                      <div className="space-y-2">
-                        <div className="h-3 w-full rounded-full bg-white/20" />
-                        <div className="h-3 w-4/5 rounded-full bg-white/15" />
+                    <div className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] p-2 border border-white/5 text-[9px] text-slate-300">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                      Email Block
+                    </div>
+                    <div className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] p-2 border border-white/5 text-[9px] text-slate-300">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                      Checkbox
+                    </div>
+                    <div className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] p-2 border border-white/5 text-[9px] text-emerald-300 border-dashed border-emerald-500/30">
+                      + Add New
+                    </div>
+                  </div>
+
+                  {/* Right Mock Form Design Output */}
+                  <div className="rounded-xl bg-slate-950/70 p-4 border border-white/5">
+                    <div className="mx-auto max-w-xs text-center mb-4">
+                      <div className="h-1 w-10 bg-emerald-400 rounded-full mx-auto mb-2" />
+                      <h4 className="text-xs font-bold">Contact Support</h4>
+                      <p className="text-[8px] text-slate-400 mt-1">Get in touch with our operations team.</p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <div className="h-2 w-12 bg-white/20 rounded-full mb-1.5" />
+                        <div className="h-8 w-full bg-white/5 rounded-lg border border-white/10" />
                       </div>
-                      <div className="mt-7 flex gap-3">
-                        <div className="h-11 w-32 rounded-full bg-gradient-to-r from-violet-400 to-cyan-300" />
-                        <div className="h-11 w-24 rounded-full border border-white/20 bg-white/10" />
+                      <div>
+                        <div className="h-2 w-16 bg-white/20 rounded-full mb-1.5" />
+                        <div className="h-8 w-full bg-white/5 rounded-lg border border-white/10" />
+                      </div>
+                      <div className="pt-2">
+                        <div className="h-8 w-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center text-[10px] font-bold shadow-md shadow-emerald-500/10">
+                          Submit Details
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-3 gap-3">
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3">
-                      <div className="mb-3 h-8 w-8 rounded-xl bg-cyan-300/20" />
-                      <div className="h-2 w-full rounded-full bg-white/20" />
-                    </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3">
-                      <div className="mb-3 h-8 w-8 rounded-xl bg-violet-300/20" />
-                      <div className="h-2 w-full rounded-full bg-white/20" />
-                    </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3">
-                      <div className="mb-3 h-8 w-8 rounded-xl bg-emerald-300/20" />
-                      <div className="h-2 w-full rounded-full bg-white/20" />
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
+            
           </section>
 
-          <section className="grid w-full gap-5 pb-8 sm:grid-cols-3">
-            {features.map((feature) => (
-              <article
-                className="group rounded-[1.75rem] border border-white/10 bg-white/[0.06] p-6 text-left shadow-2xl shadow-black/20 backdrop-blur-xl transition duration-300 hover:-translate-y-1.5 hover:border-cyan-300/30 hover:bg-white/[0.09]"
-                key={feature.title}
-              >
-                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-br from-white/15 to-white/5 text-cyan-200 shadow-lg shadow-blue-950/20 transition duration-300 group-hover:scale-105 group-hover:text-white">
-                  {feature.icon}
-                </div>
-                <h2 className="text-xl font-bold tracking-normal text-white">
-                  {feature.title}
-                </h2>
-                <p className="mt-3 text-sm leading-6 text-slate-400">
-                  {feature.description}
-                </p>
-              </article>
-            ))}
+          {/* Features Grid */}
+          <section className="border-t border-white/5 pt-16 pb-12">
+            <div className="mb-12 text-center">
+              <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl text-white">
+                Everything You Need to Design Perfect Forms
+              </h2>
+              <p className="mt-3 text-sm text-slate-400 max-w-xl mx-auto">
+                No complex coding, just drag-and-drop components optimized directly for Shopify merchants.
+              </p>
+            </div>
+            
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {features.map((feature) => (
+                <article
+                  className="group rounded-3xl border border-white/5 bg-white/[0.02] p-6 text-left shadow-2xl backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-emerald-500/25 hover:bg-white/[0.04]"
+                  key={feature.title}
+                >
+                  <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/5 bg-gradient-to-br from-white/[0.08] to-white/[0.02] text-emerald-300 shadow-md transition duration-300 group-hover:scale-105 group-hover:text-emerald-200">
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-lg font-bold text-white transition duration-300 group-hover:text-emerald-300">
+                    {feature.title}
+                  </h3>
+                  <p className="mt-2.5 text-sm leading-6 text-slate-400">
+                    {feature.description}
+                  </p>
+                </article>
+              ))}
+            </div>
           </section>
         </main>
 
-        <footer className="flex flex-col items-center justify-between gap-4 border-t border-white/10 py-6 text-sm text-slate-500 sm:flex-row">
-          <p>HeroCraft for Shopify merchants</p>
-          <p>Premium sections. Faster launches.</p>
+        {/* Footer */}
+        <footer className="flex flex-col items-center justify-between gap-4 border-t border-white/5 py-8 text-xs text-slate-500 sm:flex-row">
+          <p>© {new Date().getFullYear()} Form Design. Built for the Shopify ecosystem.</p>
+          <div className="flex gap-4">
+            <span className="hover:text-slate-400">Premium Templates</span>
+            <span>•</span>
+            <span className="hover:text-slate-400">Instant Publishing</span>
+          </div>
         </footer>
       </div>
     </div>
