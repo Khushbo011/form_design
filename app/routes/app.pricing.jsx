@@ -192,7 +192,7 @@ export default function Pricing() {
             <span className="plan-period">/ month</span>
           </div>
 
-          <s-paragraph style={{ textAlign: "center", color: "#6d7175" }}>
+          <s-paragraph style={{ textAlign: "center", color: "#6d7175" }} suppressHydrationWarning>
             Get started with one free form template.
           </s-paragraph>
 
@@ -239,7 +239,7 @@ export default function Pricing() {
             <span className="plan-period">/ month</span>
           </div>
 
-          <s-paragraph style={{ textAlign: "center", color: "#6d7175" }}>
+          <s-paragraph style={{ textAlign: "center", color: "#6d7175" }} suppressHydrationWarning>
             Unlocks selected premium templates and additional customization features.
           </s-paragraph>
 
@@ -304,7 +304,7 @@ export default function Pricing() {
             <span className="plan-period">/ month</span>
           </div>
 
-          <s-paragraph style={{ textAlign: "center", color: "#6d7175" }}>
+          <s-paragraph style={{ textAlign: "center", color: "#6d7175" }} suppressHydrationWarning>
             Unlock all templates, advanced builders, and 5 exclusive Pro forms.
           </s-paragraph>
 

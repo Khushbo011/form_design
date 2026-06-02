@@ -1,13 +1,17 @@
-Running pre-dev command: "npm exec prisma generate"Preparing dev preview on khushboo-test-store-lgno0ess.myshopify.comProxy server started on port 59616 GraphiQL server started on port 3457✅ Ready, watching for changes in your app │ Access scopes auto-granted: write_metaobject_definitions, write_metaobjects, write_products└ Using URL: https://bite-dome-congress-group.trycloudflare.comPrisma schema loaded from prisma\schema.prisma
-Datasource "db": PostgreSQL database "neondb", schema "public" at "ep-curly-art-aqecg25v-pooler.c-8.us-east-1.aws.neon.tech"
 
+> dev
+> shopify app dev
+
+Running pre-dev command: "npm exec prisma generate"Preparing dev preview on khushboo-test-store-lgno0ess.myshopify.comProxy server started on port 63562 GraphiQL server started on port 3457Sending APP_UNINSTALLED webhook to app server✅ Ready, watching for changes in your app │ Access scopes auto-granted: write_metaobject_definitions, write_metaobjects, write_products└ Using URL: https://til-born-intention-creativity.trycloudflare.comApp isn't responding yet, retrying in 5 secondsPrisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "neondb", schema "public" at "ep-curly-art-aqecg25v-pooler.c-8.us-east-1.aws.neon.tech"
+App isn't responding yet, retrying in 5 seconds
 1 migration found in prisma/migrations
 
 
 No pending migrations to apply.
-  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m59619[22m/[39m
+App isn't responding yet, retrying in 5 secondsError forwarding web request: connect ECONNREFUSED 127.0.0.1:63565└  Unreachable target "http://localhost:63565" for path: "/favicon.ico"  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m63565[22m/[39m
 [2m  [32m➜[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
-[shopify-api/INFO] version 13.0.0, environment React Router
+App hasn't started in time, giving upAPP_UNINSTALLED webhook delivery failed[shopify-api/INFO] version 13.0.0, environment React Router
 [shopify-app/INFO] Redirecting login request to https://admin.shopify.com/store/khushboo-test-store-lgno0ess/oauth/install?client_id=c27e042269833eeb69c700337117f2ef | {shop: khushboo-test-store-lgno0ess.myshopify.com}
 [shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
 [shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
@@ -19,50 +23,41 @@ config.future.expiringOfflineAccessTokens true
 config.future.expiringOfflineAccessTokens true
 [shopify-api/INFO] Creating new session | {shop: khushboo-test-store-lgno0ess.myshopify.com, isOnline: false}
 [shopify-api/INFO] Creating new session | {shop: khushboo-test-store-lgno0ess.myshopify.com, isOnline: false}
-[shopify-app/INFO] Authenticating admin request | {shop: null}
-[shopify-app/INFO] Authenticating admin request | {shop: null}
+[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Requesting billing | {shop: khushboo-test-store-lgno0ess.myshopify.com, plan: Starter Plan, isTest: true, returnUrl: http://til-born-intention-creativity.trycloudflare.com/app?shop=khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Requesting billing | {shop: khushboo-test-store-lgno0ess.myshopify.com, plan: Pro Plan, isTest: true, returnUrl: http://til-born-intention-creativity.trycloudflare.com/app?shop=khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Requesting billing | {shop: khushboo-test-store-lgno0ess.myshopify.com, plan: Starter Plan, isTest: true, returnUrl: http://til-born-intention-creativity.trycloudflare.com/app?shop=khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Redirecting login request to https://admin.shopify.com/store/khushboo-test-store-lgno0ess/oauth/install?client_id=c27e042269833eeb69c700337117f2ef | {shop: khushboo-test-store-lgno0ess.myshopify.com}
 [shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
 [shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
 [shopify-app/INFO] Authenticating admin request | {shop: null}
 [shopify-app/INFO] Authenticating admin request | {shop: null}
 [shopify-app/INFO] Authenticating admin request | {shop: null}
-[shopify-app/INFO] Authenticating admin request | {shop: null}
+[shopify-app/INFO] Requesting billing | {shop: khushboo-test-store-lgno0ess.myshopify.com, plan: Pro Plan, isTest: true, returnUrl: http://til-born-intention-creativity.trycloudflare.com/app?shop=khushboo-test-store-lgno0ess.myshopify.com}
 [shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
 [shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
 [shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Requesting billing | {shop: khushboo-test-store-lgno0ess.myshopify.com, plan: Pro Plan, isTest: true, returnUrl: http://til-born-intention-creativity.trycloudflare.com/app?shop=khushboo-test-store-lgno0ess.myshopify.com}
 [shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
 [shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
-[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
-[2m4:30:37 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@fs/C:\Users\aryan\Desktop\form_design\form-design\app\routes\_index\route.jsx, /app/styles/tailwind.css[22m
-[2m4:30:37 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@fs/C:\Users\aryan\Desktop\form_design\form-design\app\routes\_index\route.jsx, /app/styles/tailwind.css[22m
-[2m4:30:37 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@fs/C:\Users\aryan\Desktop\form_design\form-design\app\routes\_index\route.jsx, /app/styles/tailwind.css[22m
-[2m4:30:37 pm[22m [36m[1m[vite][22m[39m [34m[2m(ssr)[22m[39m [32mpage reload [39m[2mapp/routes/_index/route.jsx[22m
-[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
-[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
-[shopify-app/INFO] Authenticating admin request | {shop: null}
-[shopify-app/INFO] Authenticating admin request | {shop: null}
-[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
-[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Redirecting login request to https://admin.shopify.com/store/khushboo-test-store-lgno0ess/oauth/install?client_id=c27e042269833eeb69c700337117f2ef | {shop: khushboo-test-store-lgno0ess.myshopify.com}
 [shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
 [shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
 [shopify-app/INFO] Authenticating admin request | {shop: null}
 [shopify-app/INFO] Authenticating admin request | {shop: null}
 [shopify-app/INFO] Authenticating admin request | {shop: null}
+[shopify-app/INFO] Requesting billing | {shop: khushboo-test-store-lgno0ess.myshopify.com, plan: Pro Plan, isTest: true, returnUrl: http://til-born-intention-creativity.trycloudflare.com/app?shop=khushboo-test-store-lgno0ess.myshopify.com}
 [shopify-app/INFO] Authenticating admin request | {shop: null}
 [shopify-app/INFO] Authenticating admin request | {shop: null}
 [shopify-app/INFO] Authenticating admin request | {shop: null}
-[shopify-app/INFO] Authenticating admin request | {shop: null}
-[shopify-app/INFO] Authenticating admin request | {shop: null}
-[shopify-app/INFO] Authenticating admin request | {shop: null}
-[shopify-app/INFO] Authenticating admin request | {shop: null}
-[shopify-app/INFO] Authenticating admin request | {shop: null}
-[shopify-app/INFO] Authenticating admin request | {shop: null}
-[shopify-app/INFO] Authenticating admin request | {shop: null}
-[shopify-app/INFO] Authenticating admin request | {shop: null}
-[shopify-app/INFO] Authenticating admin request | {shop: null}
-[shopify-app/INFO] Authenticating admin request | {shop: null}
-[shopify-app/INFO] Authenticating admin request | {shop: null}
-[shopify-app/INFO] Authenticating admin request | {shop: null}
-[shopify-app/INFO] Authenticating admin request | {shop: null}
-[shopify-app/INFO] Authenticating admin request | {shop: null}
-[shopify-app/INFO] Authenticating admin request | {shop: null}
+[shopify-app/INFO] Requesting billing | {shop: khushboo-test-store-lgno0ess.myshopify.com, plan: Pro Plan, isTest: true, returnUrl: http://til-born-intention-creativity.trycloudflare.com/app?shop=khushboo-test-store-lgno0ess.myshopify.com}

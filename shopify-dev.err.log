@@ -1,7 +1,7 @@
 npm warn Unknown project config "shamefully-hoist". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
 ╭─ info ───────────────────────────────────────────────────────────────────────╮
 │                                                                              │
-│  Using shopify.app.toml for default values:                                  │
+│  Using shopify.app.form-design.toml for default values:                      │
 │                                                                              │
 │    • Org:             Khushboo                                               │
 │    • App:             form_design                                            │
@@ -20,3 +20,27 @@ npm warn Unknown project config "shamefully-hoist". This will stop working in th
 Environment variables loaded from .env
 npm warn Unknown env config "shamefully-hoist". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
 npm warn Unknown project config "shamefully-hoist". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+Shopify billing request failed {
+  shop: 'khushboo-test-store-lgno0ess.myshopify.com',
+  plan: 'Starter Plan',
+  returnUrl: 'http://til-born-intention-creativity.trycloudflare.com/app?shop=khushboo-test-store-lgno0ess.myshopify.com',
+  message: 'Apps without a public distribution cannot use the Billing API',
+  errorData: [
+    {
+      field: null,
+      message: 'Apps without a public distribution cannot use the Billing API'
+    }
+  ]
+}
+Shopify billing request failed {
+  shop: 'khushboo-test-store-lgno0ess.myshopify.com',
+  plan: 'Pro Plan',
+  returnUrl: 'http://til-born-intention-creativity.trycloudflare.com/app?shop=khushboo-test-store-lgno0ess.myshopify.com',
+  message: 'Apps without a public distribution cannot use the Billing API',
+  errorData: [
+    {
+      field: null,
+      message: 'Apps without a public distribution cannot use the Billing API'
+    }
+  ]
+}
