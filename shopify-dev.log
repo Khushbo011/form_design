@@ -61,3 +61,49 @@ config.future.expiringOfflineAccessTokens true
 [shopify-app/INFO] Authenticating admin request | {shop: null}
 [shopify-app/INFO] Authenticating admin request | {shop: null}
 [shopify-app/INFO] Requesting billing | {shop: khushboo-test-store-lgno0ess.myshopify.com, plan: Pro Plan, isTest: true, returnUrl: http://til-born-intention-creativity.trycloudflare.com/app?shop=khushboo-test-store-lgno0ess.myshopify.com}
+[2m1:16:31 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@fs/C:\Users\aryan\Desktop\form_design\form-design\app\routes\app.pricing.jsx, /app/styles/tailwind.css[22m
+[2m1:16:31 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@fs/C:\Users\aryan\Desktop\form_design\form-design\app\routes\app.pricing.jsx, /app/styles/tailwind.css[22m
+[2m1:16:31 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@fs/C:\Users\aryan\Desktop\form_design\form-design\app\routes\app.pricing.jsx, /app/styles/tailwind.css[22m
+[2m1:16:31 pm[22m [36m[1m[vite][22m[39m [34m[2m(ssr)[22m[39m [32mpage reload [39m[2mapp/routes/app.pricing.jsx[22m
+[2m1:16:33 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@fs/C:\Users\aryan\Desktop\form_design\form-design\app\routes\app.pricing.jsx, /app/styles/tailwind.css[22m
+[2m1:16:33 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@fs/C:\Users\aryan\Desktop\form_design\form-design\app\routes\app.pricing.jsx, /app/styles/tailwind.css[22m
+[2m1:16:33 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@fs/C:\Users\aryan\Desktop\form_design\form-design\app\routes\app.pricing.jsx, /app/styles/tailwind.css[22m
+[2m1:16:33 pm[22m [36m[1m[vite][22m[39m [34m[2m(ssr)[22m[39m [32mpage reload [39m[2mapp/routes/app.pricing.jsx[22m
+[2m1:16:33 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@fs/C:\Users\aryan\Desktop\form_design\form-design\app\routes\app.pricing.jsx, /app/styles/tailwind.css[22m
+[2m1:16:33 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@fs/C:\Users\aryan\Desktop\form_design\form-design\app\routes\app.pricing.jsx, /app/styles/tailwind.css[22m
+[2m1:16:33 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@fs/C:\Users\aryan\Desktop\form_design\form-design\app\routes\app.pricing.jsx, /app/styles/tailwind.css[22m
+[2m1:16:33 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@fs/C:\Users\aryan\Desktop\form_design\form-design\app\routes\app.pricing.jsx, /app/styles/tailwind.css[22m
+[2m1:16:33 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@fs/C:\Users\aryan\Desktop\form_design\form-design\app\routes\app.pricing.jsx, /app/styles/tailwind.css[22m
+[2m1:16:33 pm[22m [36m[1m[vite][22m[39m [34m[2m(ssr)[22m[39m [32mpage reload [39m[2mapp/routes/app.pricing.jsx[22m
+[2m1:16:33 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@fs/C:\Users\aryan\Desktop\form_design\form-design\app\routes\app.pricing.jsx, /app/styles/tailwind.css[22m
+[2m1:16:33 pm[22m [36m[1m[vite][22m[39m [34m[2m(ssr)[22m[39m [32mpage reload [39m[2mapp/routes/app.pricing.jsx[22m
+[shopify-app/INFO] Authenticating admin request | {shop: null}
+[shopify-app/INFO] Authenticating admin request | {shop: null}
+[shopify-app/INFO] Authenticating admin request | {shop: null}
+[shopify-app/INFO] Authenticating admin request | {shop: null}
+[shopify-app/INFO] Authenticating admin request | {shop: null}
+[shopify-app/INFO] Authenticating admin request | {shop: null}
+[shopify-app/INFO] Authenticating admin request | {shop: null}
+[shopify-app/INFO] Authenticating admin request | {shop: null}
+[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Requesting billing | {shop: khushboo-test-store-lgno0ess.myshopify.com, plan: Pro Plan, isTest: true, returnUrl: http://til-born-intention-creativity.trycloudflare.com/app?shop=khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Requesting billing | {shop: khushboo-test-store-lgno0ess.myshopify.com, plan: Pro Plan, isTest: true, returnUrl: http://til-born-intention-creativity.trycloudflare.com/app?shop=khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Authenticating admin request | {shop: khushboo-test-store-lgno0ess.myshopify.com}
+[shopify-app/INFO] Authenticating admin request | {shop: null}
+[shopify-app/INFO] Authenticating admin request | {shop: null}
+[shopify-app/INFO] Authenticating admin request | {shop: null}
+[shopify-app/INFO] Requesting billing | {shop: khushboo-test-store-lgno0ess.myshopify.com, plan: Pro Plan, isTest: true, returnUrl: http://til-born-intention-creativity.trycloudflare.com/app?shop=khushboo-test-store-lgno0ess.myshopify.com}
+[2m2:28:08 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mC:/Users/aryan/Desktop/form_design/form-design/.npmrc[22m
+[2m2:28:08 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mC:/Users/aryan/Desktop/form_design/form-design/.npmrc[22m
+[2m2:28:08 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2m.npmrc[22m
+[2m2:28:08 pm[22m [36m[1m[vite][22m[39m [34m[2m(ssr)[22m[39m [32mpage reload [39m[2m.npmrc[22m
+[2m2:28:09 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mC:/Users/aryan/Desktop/form_design/form-design/.npmrc[22m
+[2m2:28:09 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mC:/Users/aryan/Desktop/form_design/form-design/.npmrc[22m
+[2m2:28:09 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2m.npmrc[22m
+[2m2:28:09 pm[22m [36m[1m[vite][22m[39m [34m[2m(ssr)[22m[39m [32mpage reload [39m[2m.npmrc[22m
