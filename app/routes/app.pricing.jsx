@@ -1,4 +1,11 @@
-import { useLoaderData, Form, useNavigate, useNavigation, redirect } from "react-router";
+import {
+  useActionData,
+  useLoaderData,
+  Form,
+  useNavigate,
+  useNavigation,
+  redirect,
+} from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import prisma from "../db.server";
 import { authenticate, PLAN_STARTER, PLAN_PRO } from "../shopify.server";
@@ -67,7 +74,7 @@ export const action = async ({ request }) => {
   const requestedPlan = formData.get("plan"); // "free", "starter", "pro"
 
   if (requestedPlan === "free") {
-    const updatedSubscription = await prisma.storeSubscription.upsert({
+    await prisma.storeSubscription.upsert({
       where: { shop },
       update: {
         plan: "free",
@@ -86,18 +93,50 @@ export const action = async ({ request }) => {
   }
 
   const planName = requestedPlan === "pro" ? PLAN_PRO : PLAN_STARTER;
-  const appUrl = process.env.SHOPIFY_APP_URL || "https://formdesign.androgamesinfotech.tech";
-  const returnUrl = `${appUrl}/app/pricing?plan=${requestedPlan}`;
+  const requestUrl = new URL(request.url);
+  const returnUrl = `${requestUrl.origin}/app?shop=${encodeURIComponent(shop)}`;
 
-  throw await billing.request({
-    plan: planName,
-    isTest: true,
-    returnUrl,
-  });
+  try {
+    await billing.request({
+      plan: planName,
+      isTest: true,
+      returnUrl,
+    });
+  } catch (error) {
+    if (error instanceof Response) {
+      throw error;
+    }
+
+    const details = Array.isArray(error?.errorData)
+      ? error.errorData
+          .map((item) => item?.message)
+          .filter(Boolean)
+          .join(" ")
+      : "";
+    const message =
+      details ||
+      error?.message ||
+      "Shopify could not start the billing approval flow.";
+
+    console.error("Shopify billing request failed", {
+      shop,
+      plan: planName,
+      returnUrl,
+      message,
+      errorData: error?.errorData,
+    });
+
+    return {
+      billingError: message,
+    };
+  }
+
+  return redirect("/app");
 };
 
 export default function Pricing() {
   const { plan: currentPlan } = useLoaderData();
+  const actionData = useActionData();
   const navigate = useNavigate();
   const shopify = useAppBridge();
   const navigation = useNavigation();
@@ -113,6 +152,21 @@ export default function Pricing() {
       <s-button slot="primary-action" onClick={() => navigate("/app")}>
         Back to Gallery
       </s-button>
+
+      {actionData?.billingError && (
+        <div
+          className="success-banner"
+          style={{
+            background: "#fff4e5",
+            borderColor: "#ffb84d",
+            color: "#5f3700",
+            marginBottom: "16px",
+          }}
+        >
+          <strong>Billing approval could not be opened:</strong>{" "}
+          {actionData.billingError}
+        </div>
+      )}
 
       {/* Pricing header */}
       <div className="pricing-header">

@@ -1,9 +1,12 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "c4c947cc674a7d122dc9c4aa38730fd3"
+client_id = "a5172fa72c4c5daa537c52457f698ce2"
 name = "form_design"
 application_url = "https://formdesign.androgamesinfotech.tech"
 embedded = true
+
+[build]
+automatically_update_urls_on_dev = true
 
 [webhooks]
 api_version = "2026-07"
@@ -14,7 +17,3 @@ scopes = "write_metaobject_definitions,write_metaobjects,write_products"
 
 [auth]
 redirect_urls = [ "https://formdesign.androgamesinfotech.tech/auth/callback" ]
-
-[build]
-include_config_on_deploy = true
-automatically_update_urls_on_dev = true
