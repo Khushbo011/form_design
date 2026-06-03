@@ -8,23 +8,25 @@ embedded = true
 [build]
 automatically_update_urls_on_dev = true
 
-[access_scopes]
-# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_metaobject_definitions,write_metaobjects,write_products"
-
-[auth]
-redirect_urls = [ "https://formdesign.androgamesinfotech.tech/auth/callback" ]
-
 [webhooks]
-api_version = "2026-07"
+api_version = "2025-07"
 
   [[webhooks.subscriptions]]
-  uri = "/webhooks/app/scopes_update"
+  uri = "https://form-design-opal.vercel.app/webhooks/app/scopes_update"
   topics = [ "app/scopes_update" ]
 
   [[webhooks.subscriptions]]
-  uri = "/webhooks/app/uninstalled"
+  uri = "https://form-design-opal.vercel.app/webhooks/app/uninstalled"
   topics = [ "app/uninstalled" ]
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "write_metaobject_definitions,write_metaobjects,write_products"
+optional_scopes = [ ]
+use_legacy_install_flow = false
+
+[auth]
+redirect_urls = [ "https://formdesign.androgamesinfotech.tech/auth/callback" ]
 
 [product.metafields.app.demo_info]
 type = "single_line_text_field"

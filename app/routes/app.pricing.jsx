@@ -14,7 +14,6 @@ export const loader = async ({ request }) => {
   const { session, billing } = await authenticate.admin(request);
   const shop = session.shop;
 
-  // Sync active Shopify Billing plans to DB
   const billingCheck = await billing.check({
     plans: [PLAN_STARTER, PLAN_PRO],
     isTest: true,
@@ -34,8 +33,7 @@ export const loader = async ({ request }) => {
     }
   }
 
-  // Persist synced plan details in database
-  const subscription = await prisma.storeSubscription.upsert({
+  await prisma.storeSubscription.upsert({
     where: { shop },
     update: {
       plan: activePlan,
@@ -53,16 +51,33 @@ export const loader = async ({ request }) => {
     },
   });
 
-  // Redirect to App Home Dashboard if user returned with the active plan they selected
+  // Handle billing callback — user returning from Shopify's approval page
   const url = new URL(request.url);
   const planQuery = url.searchParams.get("plan");
-  if (planQuery && subscription.plan === planQuery) {
-    throw redirect("/app");
+
+  if (planQuery) {
+    const requestedPlan = planQuery.toLowerCase();
+
+    // Check if the plan the user just approved matches what billing.check() reports
+    if (
+      (requestedPlan === "pro" && activePlan === "pro") ||
+      (requestedPlan === "starter" && activePlan === "starter")
+    ) {
+      // Successfully subscribed — redirect to dashboard
+      throw redirect("/app");
+    }
+
+    // User cancelled or declined — stay on pricing page with a message
+    return {
+      shop,
+      plan: activePlan,
+      cancelled: true,
+    };
   }
 
   return {
     shop,
-    plan: subscription.plan,
+    plan: activePlan,
   };
 };
 
@@ -71,15 +86,12 @@ export const action = async ({ request }) => {
   const shop = session.shop;
 
   const formData = await request.formData();
-  const requestedPlan = formData.get("plan"); // "free", "starter", "pro"
+  const requestedPlan = formData.get("plan");
 
   if (requestedPlan === "free") {
     await prisma.storeSubscription.upsert({
       where: { shop },
-      update: {
-        plan: "free",
-        billingStatus: "active",
-      },
+      update: { plan: "free", billingStatus: "active" },
       create: {
         shop,
         plan: "free",
@@ -93,30 +105,31 @@ export const action = async ({ request }) => {
   }
 
   const planName = requestedPlan === "pro" ? PLAN_PRO : PLAN_STARTER;
-  const requestUrl = new URL(request.url);
-  const returnUrl = `${requestUrl.origin}/app?shop=${encodeURIComponent(shop)}`;
+
+  // Derive the return URL from the current request so it works in both
+  // dev (Cloudflare tunnel) and production automatically.
+  const reqUrl = new URL(request.url);
+  const returnUrl = `${reqUrl.origin}/app/pricing?plan=${requestedPlan}`;
 
   try {
+    // billing.request() throws a redirect Response on success —
+    // this will naturally propagate out of the action.
     await billing.request({
       plan: planName,
       isTest: true,
       returnUrl,
     });
   } catch (error) {
+    // Re-throw redirect Responses (the success path from billing.request)
     if (error instanceof Response) {
       throw error;
     }
 
     const details = Array.isArray(error?.errorData)
-      ? error.errorData
-          .map((item) => item?.message)
-          .filter(Boolean)
-          .join(" ")
+      ? error.errorData.map((item) => item?.message).filter(Boolean).join(" ")
       : "";
     const message =
-      details ||
-      error?.message ||
-      "Shopify could not start the billing approval flow.";
+      details || error?.message || "Shopify could not start the billing approval flow.";
 
     console.error("Shopify billing request failed", {
       shop,
@@ -126,16 +139,12 @@ export const action = async ({ request }) => {
       errorData: error?.errorData,
     });
 
-    return {
-      billingError: message,
-    };
+    return { billingError: message };
   }
-
-  return redirect("/app");
 };
 
 export default function Pricing() {
-  const { plan: currentPlan } = useLoaderData();
+  const { plan: currentPlan, cancelled } = useLoaderData();
   const actionData = useActionData();
   const navigate = useNavigate();
   const shopify = useAppBridge();
@@ -153,6 +162,20 @@ export default function Pricing() {
         Back to Gallery
       </s-button>
 
+      {cancelled && (
+        <div
+          className="success-banner"
+          style={{
+            background: "#e3f1df",
+            borderColor: "#95c985",
+            color: "#1a4314",
+            marginBottom: "16px",
+          }}
+        >
+          <strong>Subscription not changed.</strong> You cancelled or declined the billing approval. Your current plan remains active.
+        </div>
+      )}
+
       {actionData?.billingError && (
         <div
           className="success-banner"
@@ -168,52 +191,32 @@ export default function Pricing() {
         </div>
       )}
 
-      {/* Pricing header */}
       <div className="pricing-header">
         <h1>Select a Plan to Unlock Form Design Templates</h1>
         <p>Start with our basic features or upgrade to unlock advanced form templates and live visual builders.</p>
       </div>
 
-      {/* 2-Plan Grid Layout */}
       <div className="plans-container" style={{ maxWidth: "800px" }}>
 
-        {/* FREE PLAN - $0 */}
+        {/* FREE PLAN */}
         <div className={`plan-card ${currentPlan === "free" ? "active-plan" : ""}`}>
           {currentPlan === "free" && (
-            <span className="plan-badge" style={{ background: "#22c55e" }}>
-              Active Plan
-            </span>
+            <span className="plan-badge" style={{ background: "#22c55e" }}>Active Plan</span>
           )}
-
           <h2 className="plan-name">Free Plan</h2>
-
           <div className="plan-price-box" style={{ color: "#22c55e" }}>
             <span className="plan-price">$0</span>
             <span className="plan-period">/ month</span>
           </div>
-
           <s-paragraph style={{ textAlign: "center", color: "#6d7175" }} suppressHydrationWarning>
             Get started with one free form template.
           </s-paragraph>
-
           <ul className="plan-features-list">
-            <li className="plan-feature-item">
-              ✓ <strong>Unlock 4 Template</strong>
-            </li>
-
-            <li className="plan-feature-item disabled">
-              ✕ Additional Premium Templates
-            </li>
-
-            <li className="plan-feature-item disabled">
-              ✕ Advanced Builders
-            </li>
-
-            <li className="plan-feature-item disabled">
-              ✕ Pro Exclusive Forms
-            </li>
+            <li className="plan-feature-item">✓ <strong>Unlock 4 Template</strong></li>
+            <li className="plan-feature-item disabled">✕ Additional Premium Templates</li>
+            <li className="plan-feature-item disabled">✕ Advanced Builders</li>
+            <li className="plan-feature-item disabled">✕ Pro Exclusive Forms</li>
           </ul>
-
           <Form method="post">
             <input type="hidden" name="plan" value="free" />
             <button
@@ -221,14 +224,12 @@ export default function Pricing() {
               className="plan-btn"
               disabled={isSubmitting || currentPlan === "free"}
             >
-              {currentPlan === "free"
-                ? "Current Free Plan"
-                : "Use Free Plan"}
+              {currentPlan === "free" ? "Current Free Plan" : "Use Free Plan"}
             </button>
           </Form>
         </div>
 
-        {/* STARTER PLAN - $49 */}
+        {/* STARTER PLAN */}
         <div className={`plan-card ${currentPlan === "starter" ? "active-plan" : ""}`}>
           {currentPlan === "starter" && (
             <span className="plan-badge" style={{ background: "var(--color-starter)" }}>Active Plan</span>
@@ -238,50 +239,17 @@ export default function Pricing() {
             <span className="plan-price">$49</span>
             <span className="plan-period">/ month</span>
           </div>
-
           <s-paragraph style={{ textAlign: "center", color: "#6d7175" }} suppressHydrationWarning>
             Unlocks selected premium templates and additional customization features.
           </s-paragraph>
-
           <ul className="plan-features-list">
-            <li className="plan-feature-item">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
-              </svg>
-              <strong>Unlock 4 Templates</strong> (Free + Starter)
-            </li>
-            <li className="plan-feature-item">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
-              </svg>
-              Customer Feedback & Support Form
-            </li>
-            <li className="plan-feature-item">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
-              </svg>
-              Job Application & Careers Form
-            </li>
-            <li className="plan-feature-item">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
-              </svg>
-              Standard Custom Audit Logs Form
-            </li>
-            <li className="plan-feature-item disabled">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
-              </svg>
-              SaaS Live Builder (Pro Only)
-            </li>
-            <li className="plan-feature-item disabled">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
-              </svg>
-              5 Exclusive Pro Forms (Pro Only)
-            </li>
+            <li className="plan-feature-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg><strong>Unlock 4 Templates</strong> (Free + Starter)</li>
+            <li className="plan-feature-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>Customer Feedback & Support Form</li>
+            <li className="plan-feature-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>Job Application & Careers Form</li>
+            <li className="plan-feature-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>Standard Custom Audit Logs Form</li>
+            <li className="plan-feature-item disabled"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>SaaS Live Builder (Pro Only)</li>
+            <li className="plan-feature-item disabled"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>5 Exclusive Pro Forms (Pro Only)</li>
           </ul>
-
           <Form method="post">
             <input type="hidden" name="plan" value="starter" />
             <button
@@ -295,7 +263,7 @@ export default function Pricing() {
           </Form>
         </div>
 
-        {/* PRO PLAN - $99 */}
+        {/* PRO PLAN */}
         <div className={`plan-card featured ${currentPlan === "pro" ? "active-plan" : ""}`}>
           <span className="plan-badge" style={{ background: "var(--color-pro)" }}>Pro Tier</span>
           <h2 className="plan-name">Pro Plan</h2>
@@ -303,50 +271,17 @@ export default function Pricing() {
             <span className="plan-price">$99</span>
             <span className="plan-period">/ month</span>
           </div>
-
           <s-paragraph style={{ textAlign: "center", color: "#6d7175" }} suppressHydrationWarning>
             Unlock all templates, advanced builders, and 5 exclusive Pro forms.
           </s-paragraph>
-
           <ul className="plan-features-list">
-            <li className="plan-feature-item">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
-              </svg>
-              <strong>Unlock All 9 Templates</strong> (Full Gallery)
-            </li>
-            <li className="plan-feature-item">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
-              </svg>
-              <strong>5 Advanced Premium Forms</strong> (Exclusive to Pro)
-            </li>
-            <li className="plan-feature-item">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
-              </svg>
-              SaaS Products Document builder
-            </li>
-            <li className="plan-feature-item">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
-              </svg>
-              Neon Glow Dark Theme Event RSVP
-            </li>
-            <li className="plan-feature-item">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
-              </svg>
-              Premium D2C Order & Shipping Checkout Form
-            </li>
-            <li className="plan-feature-item">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
-              </svg>
-              Real-time Live Form drafting panels
-            </li>
+            <li className="plan-feature-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg><strong>Unlock All 9 Templates</strong> (Full Gallery)</li>
+            <li className="plan-feature-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg><strong>5 Advanced Premium Forms</strong> (Exclusive to Pro)</li>
+            <li className="plan-feature-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>SaaS Products Document builder</li>
+            <li className="plan-feature-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>Neon Glow Dark Theme Event RSVP</li>
+            <li className="plan-feature-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>Premium D2C Order & Shipping Checkout Form</li>
+            <li className="plan-feature-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>Real-time Live Form drafting panels</li>
           </ul>
-
           <Form method="post">
             <input type="hidden" name="plan" value="pro" />
             <button

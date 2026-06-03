@@ -233,12 +233,12 @@ export default function TemplateDetail() {
         {/* Left column: Template settings & info */}
         <div className="sidebar-settings">
           <s-heading size="small">About this Template</s-heading>
-          <s-paragraph style={{ margin: "8px 0" }}>
+          <s-paragraph style={{ margin: "8px 0" }} suppressHydrationWarning>
             {template.description}
           </s-paragraph>
           
           <div className="settings-group">
-            <s-text><strong>Category:</strong> <span style={{ textTransform: "capitalize" }}>{template.category}</span></s-text>
+            <s-text suppressHydrationWarning><strong>Category:</strong> <span style={{ textTransform: "capitalize" }}>{template.category}</span></s-text>
             <br />
             <s-text>
               <strong>Tier:</strong>{" "}
@@ -266,7 +266,7 @@ export default function TemplateDetail() {
               )}
             </Form>
 
-            <s-button onClick={handleReset} variant="tertiary" style={{ marginTop: "8px" }}>
+            <s-button onClick={handleReset} variant="tertiary" style={{ marginTop: "8px" }} suppressHydrationWarning>
               Reset Fields
             </s-button>
           </div>
