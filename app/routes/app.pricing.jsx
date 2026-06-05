@@ -3,6 +3,7 @@ import {
   useNavigate,
   redirect,
   useFetcher,
+  Form,
 } from "react-router";
 import { useState, useCallback, useEffect } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
@@ -376,7 +377,7 @@ export default function Pricing() {
           {/* Standard form POST — the redirect from billing.request() will
               propagate through React Router. App Bridge intercepts it and
               opens the Shopify billing page at the top level. */}
-          <form method="post" id="starter-plan-form">
+          <Form method="post" id="starter-plan-form">
             <input type="hidden" name="plan" value="starter" />
             <button
               type="submit"
@@ -387,7 +388,7 @@ export default function Pricing() {
                 ? "Active Starter Plan"
                 : "Upgrade to Starter"}
             </button>
-          </form>
+          </Form>
         </div>
 
         {/* PRO PLAN — Standard form POST */}
@@ -441,7 +442,7 @@ export default function Pricing() {
             </li>
           </ul>
 
-          <form method="post" id="pro-plan-form">
+          <Form method="post" id="pro-plan-form">
             <input type="hidden" name="plan" value="pro" />
             <button
               type="submit"
@@ -452,7 +453,7 @@ export default function Pricing() {
                 ? "Active Pro Plan"
                 : "Upgrade to Pro"}
             </button>
-          </form>
+          </Form>
         </div>
       </div>
 
