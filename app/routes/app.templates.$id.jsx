@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useLoaderData, useNavigate, Form, useNavigation } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import prisma from "../db.server";
@@ -72,7 +72,7 @@ export const action = async ({ request }) => {
   const formData = await request.formData();
   const templateId = formData.get("templateId");
 
-  // Save template usage details into SQLite database
+  // Save template usage details into database
   await prisma.templateUsage.create({
     data: {
       shop,
@@ -83,17 +83,214 @@ export const action = async ({ request }) => {
   return { success: true };
 };
 
+// ─── DEFAULT DESIGN VALUES ──────────────────────────────────────────────────
+const DEFAULT_DESIGN = {
+  // Colors
+  formBg: "#ffffff",
+  formTextColor: "#202223",
+  labelColor: "#475569",
+  inputBg: "#ffffff",
+  inputBorderColor: "#cbd5e1",
+  inputTextColor: "#334155",
+  placeholderColor: "#94a3b8",
+  buttonBg: "#6366f1",
+  buttonTextColor: "#ffffff",
+  // Typography
+  fontFamily: "Inter",
+  fontSize: 14,
+  labelFontSize: 13,
+  labelFontWeight: "600",
+  // Layout
+  formWidth: 100,
+  formPadding: 32,
+  fieldSpacing: 16,
+  // Borders
+  formBorderRadius: 12,
+  inputBorderRadius: 6,
+  buttonBorderRadius: 8,
+  formBorderWidth: 1,
+  formBorderColor: "#e2e8f0",
+  // Button
+  buttonPadding: 12,
+  // Custom CSS
+  customCss: "",
+};
+
+const FONT_OPTIONS = [
+  "Inter",
+  "Roboto",
+  "Outfit",
+  "Poppins",
+  "Open Sans",
+  "Lato",
+  "Montserrat",
+  "Source Sans 3",
+  "Nunito",
+  "Raleway",
+  "DM Sans",
+  "Space Grotesk",
+];
+
+// Chevron SVG for collapsible sections
+const ChevronDown = ({ isOpen }) => (
+  <svg
+    className={`customize-section-chevron ${isOpen ? "open" : ""}`}
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 20 20"
+    fill="currentColor"
+  >
+    <path
+      fillRule="evenodd"
+      d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+
+// ─── COLOR PICKER CONTROL ───────────────────────────────────────────────────
+function ColorControl({ label, value, onChange }) {
+  return (
+    <div className="ctrl-group">
+      <div className="ctrl-label">{label}</div>
+      <div className="ctrl-color-row">
+        <input
+          type="color"
+          className="ctrl-color-input"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <input
+          type="text"
+          className="ctrl-color-hex"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          maxLength={7}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ─── RANGE SLIDER CONTROL ───────────────────────────────────────────────────
+function RangeControl({ label, value, onChange, min, max, step = 1, unit = "px" }) {
+  return (
+    <div className="ctrl-group">
+      <div className="ctrl-label">
+        {label}
+        <span className="ctrl-value">{value}{unit}</span>
+      </div>
+      <input
+        type="range"
+        className="ctrl-range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+      />
+    </div>
+  );
+}
+
+// ─── SELECT CONTROL ─────────────────────────────────────────────────────────
+function SelectControl({ label, value, onChange, options }) {
+  return (
+    <div className="ctrl-group">
+      <div className="ctrl-label">{label}</div>
+      <select
+        className="ctrl-select"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        {options.map((opt) => (
+          <option key={typeof opt === "string" ? opt : opt.value} value={typeof opt === "string" ? opt : opt.value}>
+            {typeof opt === "string" ? opt : opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+// ─── COLLAPSIBLE SECTION ────────────────────────────────────────────────────
+function CollapsibleSection({ icon, title, defaultOpen = false, children }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <div className="customize-section">
+      <div
+        className="customize-section-header"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <div className="customize-section-title">
+          <span className="section-icon">{icon}</span>
+          {title}
+        </div>
+        <ChevronDown isOpen={isOpen} />
+      </div>
+      {isOpen && <div className="customize-section-body">{children}</div>}
+    </div>
+  );
+}
+
+// ─── MAIN COMPONENT ─────────────────────────────────────────────────────────
 export default function TemplateDetail() {
   const { plan: currentPlan, template, isUnlockedFromQuery } = useLoaderData();
   const navigate = useNavigate();
   const shopify = useAppBridge();
   const navigation = useNavigation();
+  const customStyleRef = useRef(null);
 
   const isSaving = navigation.state === "submitting";
 
   const [formInputs, setFormInputs] = useState({});
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [activeSasaTab, setActiveSasaTab] = useState("about");
+  const [activePanel, setActivePanel] = useState("design"); // "design" | "info"
+
+  // ── Design customization state ──────────────────────────────────────────
+  const [design, setDesign] = useState({ ...DEFAULT_DESIGN });
+
+  const updateDesign = useCallback((key, value) => {
+    setDesign((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
+  const resetDesign = useCallback(() => {
+    setDesign({ ...DEFAULT_DESIGN });
+    shopify.toast.show("Design reset to defaults", { isError: false });
+  }, [shopify]);
+
+  // ── Inject custom CSS into a <style> element ──────────────────────────────
+  useEffect(() => {
+    if (!customStyleRef.current) {
+      const styleEl = document.createElement("style");
+      styleEl.setAttribute("data-custom-design", "true");
+      document.head.appendChild(styleEl);
+      customStyleRef.current = styleEl;
+    }
+    customStyleRef.current.textContent = design.customCss;
+
+    return () => {
+      if (customStyleRef.current) {
+        customStyleRef.current.remove();
+        customStyleRef.current = null;
+      }
+    };
+  }, [design.customCss]);
+
+  // ── Load Google Font dynamically ──────────────────────────────────────────
+  useEffect(() => {
+    if (design.fontFamily && design.fontFamily !== "Inter") {
+      const linkId = `gfont-${design.fontFamily.replace(/\s+/g, "-")}`;
+      if (!document.getElementById(linkId)) {
+        const link = document.createElement("link");
+        link.id = linkId;
+        link.rel = "stylesheet";
+        link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(design.fontFamily)}:wght@400;500;600;700;800&display=swap`;
+        document.head.appendChild(link);
+      }
+    }
+  }, [design.fontFamily]);
 
   if (!template) {
     return (
@@ -108,7 +305,7 @@ export default function TemplateDetail() {
 
   // Determine if this template is locked under user's current plan
   const getLockStatus = () => {
-    if (isUnlockedFromQuery) return false; // Overridden unlock from gallery first card logic
+    if (isUnlockedFromQuery) return false;
     if (template.type === "free") return false;
     if (template.type === "starter") {
       return currentPlan === "free";
@@ -138,6 +335,66 @@ export default function TemplateDetail() {
     setFormSubmitted(false);
     setFormInputs({});
   };
+
+  // ── Build inline style object from design state ───────────────────────────
+  const buildFormStyle = () => ({
+    fontFamily: `'${design.fontFamily}', sans-serif`,
+    fontSize: `${design.fontSize}px`,
+    backgroundColor: design.formBg,
+    color: design.formTextColor,
+    padding: `${design.formPadding}px`,
+    borderRadius: `${design.formBorderRadius}px`,
+    borderWidth: `${design.formBorderWidth}px`,
+    borderColor: design.formBorderColor,
+    borderStyle: "solid",
+    width: `${design.formWidth}%`,
+    maxWidth: design.formWidth === 100 ? "none" : undefined,
+    "--custom-label-color": design.labelColor,
+    "--custom-label-size": `${design.labelFontSize}px`,
+    "--custom-label-weight": design.labelFontWeight,
+    "--custom-input-bg": design.inputBg,
+    "--custom-input-border": design.inputBorderColor,
+    "--custom-input-text": design.inputTextColor,
+    "--custom-input-radius": `${design.inputBorderRadius}px`,
+    "--custom-placeholder-color": design.placeholderColor,
+    "--custom-btn-bg": design.buttonBg,
+    "--custom-btn-text": design.buttonTextColor,
+    "--custom-btn-radius": `${design.buttonBorderRadius}px`,
+    "--custom-btn-padding": `${design.buttonPadding}px`,
+    "--custom-field-spacing": `${design.fieldSpacing}px`,
+  });
+
+  // ── CSS override string applied to preview wrapper ────────────────────────
+  const buildPreviewOverrideCss = () => `
+    .customized-preview label {
+      color: ${design.labelColor} !important;
+      font-size: ${design.labelFontSize}px !important;
+      font-weight: ${design.labelFontWeight} !important;
+    }
+    .customized-preview input,
+    .customized-preview select,
+    .customized-preview textarea {
+      background: ${design.inputBg} !important;
+      border-color: ${design.inputBorderColor} !important;
+      color: ${design.inputTextColor} !important;
+      border-radius: ${design.inputBorderRadius}px !important;
+    }
+    .customized-preview input::placeholder,
+    .customized-preview textarea::placeholder {
+      color: ${design.placeholderColor} !important;
+    }
+    .customized-preview .btn-submit,
+    .customized-preview .btn-save,
+    .customized-preview .btn-next {
+      background: ${design.buttonBg} !important;
+      color: ${design.buttonTextColor} !important;
+      border-radius: ${design.buttonBorderRadius}px !important;
+      padding: ${design.buttonPadding}px !important;
+    }
+    .customized-preview .form-group {
+      margin-bottom: ${design.fieldSpacing}px !important;
+    }
+  `;
 
   // Render individual form fields dynamically
   const renderField = (field) => {
@@ -208,6 +465,7 @@ export default function TemplateDetail() {
     }
   };
 
+  // ── RENDER ────────────────────────────────────────────────────────────────
   return (
     <s-page heading={`Live Preview: ${template.name}`}>
       <s-button slot="primary-action" onClick={() => navigate("/app")}>
@@ -228,52 +486,277 @@ export default function TemplateDetail() {
         </s-section>
       )}
 
-      <div className="detail-layout">
+      {/* Inline style tag for real-time design overrides */}
+      <style dangerouslySetInnerHTML={{ __html: buildPreviewOverrideCss() }} />
+
+      <div className="detail-layout with-customizer">
         
-        {/* Left column: Template settings & info */}
-        <div className="sidebar-settings">
-          <s-heading size="small">About this Template</s-heading>
-          <s-paragraph style={{ margin: "8px 0" }} suppressHydrationWarning>
-            {template.description}
-          </s-paragraph>
+        {/* ── LEFT SIDEBAR: Design Customization Panel ─────────────────── */}
+        <div className="sidebar-settings customizer-sidebar">
           
-          <div className="settings-group">
-            <s-text suppressHydrationWarning><strong>Category:</strong> <span style={{ textTransform: "capitalize" }}>{template.category}</span></s-text>
-            <br />
-            <s-text>
-              <strong>Tier:</strong>{" "}
-              <span style={{ textTransform: "uppercase", color: template.type === "pro" ? "var(--color-pro)" : template.type === "starter" ? "var(--color-starter)" : "#008060", fontWeight: "bold" }}>
-                {template.type}
-              </span>
-            </s-text>
+          {/* Panel Tabs */}
+          <div className="panel-tabs">
+            <button
+              type="button"
+              className={`panel-tab ${activePanel === "design" ? "active" : ""}`}
+              onClick={() => setActivePanel("design")}
+            >
+              🎨 Design
+            </button>
+            <button
+              type="button"
+              className={`panel-tab ${activePanel === "info" ? "active" : ""}`}
+              onClick={() => setActivePanel("info")}
+            >
+              ℹ️ Info
+            </button>
           </div>
 
-          <div className="settings-group">
-            <s-heading size="small">Actions</s-heading>
-            
-            {/* Database logging: use standard form post to log template activation */}
-            <Form method="post" style={{ marginTop: "12px" }}>
-              <input type="hidden" name="templateId" value={template.id} />
+          {/* ── DESIGN TAB ─────────────────────────────────────────────── */}
+          {activePanel === "design" && (
+            <div className="customization-panel">
               
-              {!isLocked ? (
-                <s-button submit variant="primary" disabled={isSaving}>
-                  {isSaving ? "Saving..." : "Use Template"}
-                </s-button>
-              ) : (
-                <s-button onClick={() => navigate("/app/pricing")} variant="secondary">
-                  Unlock Template
-                </s-button>
-              )}
-            </Form>
+              {/* Colors Section */}
+              <CollapsibleSection icon="🎨" title="Colors" defaultOpen={true}>
+                <ColorControl
+                  label="Form Background"
+                  value={design.formBg}
+                  onChange={(v) => updateDesign("formBg", v)}
+                />
+                <ColorControl
+                  label="Text Color"
+                  value={design.formTextColor}
+                  onChange={(v) => updateDesign("formTextColor", v)}
+                />
+                <ColorControl
+                  label="Label Color"
+                  value={design.labelColor}
+                  onChange={(v) => updateDesign("labelColor", v)}
+                />
+                <ColorControl
+                  label="Input Background"
+                  value={design.inputBg}
+                  onChange={(v) => updateDesign("inputBg", v)}
+                />
+                <ColorControl
+                  label="Input Border"
+                  value={design.inputBorderColor}
+                  onChange={(v) => updateDesign("inputBorderColor", v)}
+                />
+                <ColorControl
+                  label="Input Text"
+                  value={design.inputTextColor}
+                  onChange={(v) => updateDesign("inputTextColor", v)}
+                />
+                <ColorControl
+                  label="Placeholder"
+                  value={design.placeholderColor}
+                  onChange={(v) => updateDesign("placeholderColor", v)}
+                />
+                <ColorControl
+                  label="Button Background"
+                  value={design.buttonBg}
+                  onChange={(v) => updateDesign("buttonBg", v)}
+                />
+                <ColorControl
+                  label="Button Text"
+                  value={design.buttonTextColor}
+                  onChange={(v) => updateDesign("buttonTextColor", v)}
+                />
+              </CollapsibleSection>
 
-            <s-button onClick={handleReset} variant="tertiary" style={{ marginTop: "8px" }} suppressHydrationWarning>
-              Reset Fields
-            </s-button>
-          </div>
+              {/* Typography Section */}
+              <CollapsibleSection icon="🔤" title="Typography" defaultOpen={false}>
+                <SelectControl
+                  label="Font Family"
+                  value={design.fontFamily}
+                  onChange={(v) => updateDesign("fontFamily", v)}
+                  options={FONT_OPTIONS}
+                />
+                <RangeControl
+                  label="Font Size"
+                  value={design.fontSize}
+                  onChange={(v) => updateDesign("fontSize", v)}
+                  min={10}
+                  max={24}
+                />
+                <RangeControl
+                  label="Label Font Size"
+                  value={design.labelFontSize}
+                  onChange={(v) => updateDesign("labelFontSize", v)}
+                  min={10}
+                  max={20}
+                />
+                <SelectControl
+                  label="Label Font Weight"
+                  value={design.labelFontWeight}
+                  onChange={(v) => updateDesign("labelFontWeight", v)}
+                  options={[
+                    { value: "400", label: "Normal (400)" },
+                    { value: "500", label: "Medium (500)" },
+                    { value: "600", label: "Semibold (600)" },
+                    { value: "700", label: "Bold (700)" },
+                    { value: "800", label: "Extra Bold (800)" },
+                  ]}
+                />
+              </CollapsibleSection>
+
+              {/* Layout & Spacing Section */}
+              <CollapsibleSection icon="📐" title="Layout & Spacing" defaultOpen={false}>
+                <RangeControl
+                  label="Form Width"
+                  value={design.formWidth}
+                  onChange={(v) => updateDesign("formWidth", v)}
+                  min={40}
+                  max={100}
+                  unit="%"
+                />
+                <RangeControl
+                  label="Form Padding"
+                  value={design.formPadding}
+                  onChange={(v) => updateDesign("formPadding", v)}
+                  min={8}
+                  max={64}
+                />
+                <RangeControl
+                  label="Field Spacing"
+                  value={design.fieldSpacing}
+                  onChange={(v) => updateDesign("fieldSpacing", v)}
+                  min={4}
+                  max={40}
+                />
+              </CollapsibleSection>
+
+              {/* Borders & Corners Section */}
+              <CollapsibleSection icon="🔲" title="Borders & Corners" defaultOpen={false}>
+                <RangeControl
+                  label="Form Border Radius"
+                  value={design.formBorderRadius}
+                  onChange={(v) => updateDesign("formBorderRadius", v)}
+                  min={0}
+                  max={32}
+                />
+                <RangeControl
+                  label="Form Border Width"
+                  value={design.formBorderWidth}
+                  onChange={(v) => updateDesign("formBorderWidth", v)}
+                  min={0}
+                  max={5}
+                />
+                <ColorControl
+                  label="Form Border Color"
+                  value={design.formBorderColor}
+                  onChange={(v) => updateDesign("formBorderColor", v)}
+                />
+                <RangeControl
+                  label="Input Border Radius"
+                  value={design.inputBorderRadius}
+                  onChange={(v) => updateDesign("inputBorderRadius", v)}
+                  min={0}
+                  max={20}
+                />
+              </CollapsibleSection>
+
+              {/* Button Design Section */}
+              <CollapsibleSection icon="🖱️" title="Button Design" defaultOpen={false}>
+                <ColorControl
+                  label="Button Background"
+                  value={design.buttonBg}
+                  onChange={(v) => updateDesign("buttonBg", v)}
+                />
+                <ColorControl
+                  label="Button Text Color"
+                  value={design.buttonTextColor}
+                  onChange={(v) => updateDesign("buttonTextColor", v)}
+                />
+                <RangeControl
+                  label="Button Border Radius"
+                  value={design.buttonBorderRadius}
+                  onChange={(v) => updateDesign("buttonBorderRadius", v)}
+                  min={0}
+                  max={24}
+                />
+                <RangeControl
+                  label="Button Padding"
+                  value={design.buttonPadding}
+                  onChange={(v) => updateDesign("buttonPadding", v)}
+                  min={6}
+                  max={24}
+                />
+              </CollapsibleSection>
+
+              {/* Custom CSS Section */}
+              <CollapsibleSection icon="💻" title="Custom CSS" defaultOpen={false}>
+                <div className="ctrl-group">
+                  <div className="ctrl-label">Additional CSS</div>
+                  <textarea
+                    className="ctrl-css-textarea"
+                    value={design.customCss}
+                    onChange={(e) => updateDesign("customCss", e.target.value)}
+                    placeholder={`/* Example: */\n.form-group label {\n  text-transform: uppercase;\n}`}
+                    spellCheck={false}
+                  />
+                </div>
+              </CollapsibleSection>
+
+              {/* Reset All */}
+              <button
+                type="button"
+                className="ctrl-reset-btn"
+                onClick={resetDesign}
+              >
+                ↺ Reset All to Defaults
+              </button>
+            </div>
+          )}
+
+          {/* ── INFO TAB (original sidebar content) ────────────────────── */}
+          {activePanel === "info" && (
+            <div className="customization-panel">
+              <s-heading size="small">About this Template</s-heading>
+              <s-paragraph style={{ margin: "8px 0" }} suppressHydrationWarning>
+                {template.description}
+              </s-paragraph>
+              
+              <div className="settings-group">
+                <s-text suppressHydrationWarning><strong>Category:</strong> <span style={{ textTransform: "capitalize" }}>{template.category}</span></s-text>
+                <br />
+                <s-text>
+                  <strong>Tier:</strong>{" "}
+                  <span style={{ textTransform: "uppercase", color: template.type === "pro" ? "var(--color-pro)" : template.type === "starter" ? "var(--color-starter)" : "#008060", fontWeight: "bold" }}>
+                    {template.type}
+                  </span>
+                </s-text>
+              </div>
+
+              <div className="settings-group">
+                <s-heading size="small">Actions</s-heading>
+                
+                {/* Database logging: use standard form post to log template activation */}
+                <Form method="post" style={{ marginTop: "12px" }}>
+                  <input type="hidden" name="templateId" value={template.id} />
+                  
+                  {!isLocked ? (
+                    <s-button submit variant="primary" disabled={isSaving}>
+                      {isSaving ? "Saving..." : "Use Template"}
+                    </s-button>
+                  ) : (
+                    <s-button onClick={() => navigate("/app/pricing")} variant="secondary">
+                      Unlock Template
+                    </s-button>
+                  )}
+                </Form>
+
+                <s-button onClick={handleReset} variant="tertiary" style={{ marginTop: "8px" }} suppressHydrationWarning>
+                  Reset Fields
+                </s-button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Right column: The interactive Form Theme layout */}
-        <div className="preview-container">
+        {/* ── RIGHT COLUMN: The Interactive Form Theme Layout ──────────── */}
+        <div className="preview-container customized">
           
           {/* Submission Success overlay banner */}
           {formSubmitted ? (
@@ -294,12 +777,12 @@ export default function TemplateDetail() {
               </s-button>
             </div>
           ) : (
-            <>
-              {/* Render based on specific template theme */}
+            <div className="customized-preview">
+              {/* Render based on specific template theme with design overrides */}
               
               {/* 1. Newsletter Signup (Free) */}
               {template.styleName === "minimalist-glass" && (
-                <form onSubmit={handleFormSubmit} className="form-minimalist-glass">
+                <form onSubmit={handleFormSubmit} className="form-minimalist-glass" style={buildFormStyle()}>
                   <h2>{template.name}</h2>
                   <p className="subtitle">{template.subtitle}</p>
                   {template.fields.map((f) => renderField(f))}
@@ -311,7 +794,7 @@ export default function TemplateDetail() {
 
               {/* 2. Customer Support & Feedback (Starter) */}
               {template.styleName === "support-clean" && (
-                <form onSubmit={handleFormSubmit} className="form-support-clean">
+                <form onSubmit={handleFormSubmit} className="form-support-clean" style={buildFormStyle()}>
                   <h2>{template.name}</h2>
                   <p className="subtitle">{template.subtitle}</p>
                   {template.fields.map((f) => renderField(f))}
@@ -323,7 +806,7 @@ export default function TemplateDetail() {
 
               {/* 3. Job Application Form (Starter - Eugen Esanu style) */}
               {template.styleName === "job-modern" && (
-                <form onSubmit={handleFormSubmit} className="form-job-modern">
+                <form onSubmit={handleFormSubmit} className="form-job-modern" style={buildFormStyle()}>
                   <div className="form-header">
                     <h2>Application form</h2>
                     <p className="subtitle">Add fields that you want your candidates to fill in when applying</p>
@@ -350,7 +833,7 @@ export default function TemplateDetail() {
 
               {/* 4. Custom Audit Form (Starter - Yuktha Mukhi style) */}
               {template.styleName === "audit-blue" && (
-                <div className="audit-wrapper">
+                <div className="audit-wrapper" style={{ borderRadius: `${design.formBorderRadius}px` }}>
                   <div className="audit-header-banner">
                     <h1>Customize audit forms</h1>
                     <div className="audit-tags">
@@ -359,7 +842,7 @@ export default function TemplateDetail() {
                       <span className="audit-tag">#time-saver</span>
                     </div>
                   </div>
-                  <form onSubmit={handleFormSubmit} className="audit-form-container">
+                  <form onSubmit={handleFormSubmit} className="audit-form-container" style={{ fontFamily: `'${design.fontFamily}', sans-serif`, fontSize: `${design.fontSize}px` }}>
                     <h2>Audit Details</h2>
                     {template.fields.map((f) => renderField(f))}
                     <button type="submit" className="btn-submit" style={{ marginTop: "12px" }}>
@@ -371,7 +854,7 @@ export default function TemplateDetail() {
 
               {/* 5. SaaS Product Settings (Pro - Monty Hayton style) */}
               {template.styleName === "saas-dashboard" && (
-                <div className="saas-wrapper">
+                <div className="saas-wrapper" style={{ borderRadius: `${design.formBorderRadius}px` }}>
                   <div className="saas-tabs">
                     <button
                       type="button"
@@ -391,7 +874,7 @@ export default function TemplateDetail() {
 
                   <div className="saas-grid">
                     {/* Left: Input Fields */}
-                    <form onSubmit={handleFormSubmit} className="saas-left">
+                    <form onSubmit={handleFormSubmit} className="saas-left" style={{ fontFamily: `'${design.fontFamily}', sans-serif`, fontSize: `${design.fontSize}px` }}>
                       <h3>Edit Item settings</h3>
                       {template.fields.map((f) => renderField(f))}
                       <button type="submit" className="btn-save" style={{ marginTop: "12px" }}>
@@ -399,7 +882,7 @@ export default function TemplateDetail() {
                       </button>
                     </form>
 
-                    {/* Right: Live Draft Document sheet (updates on text change!) */}
+                    {/* Right: Live Draft Document sheet */}
                     <div className="saas-right">
                       <div className="draft-document">
                         <div className="draft-header">
@@ -436,7 +919,7 @@ export default function TemplateDetail() {
 
               {/* 6. Neon RSVP / Event Reservation (Pro) */}
               {template.styleName === "neon-event" && (
-                <form onSubmit={handleFormSubmit} className="form-neon-rsvp">
+                <form onSubmit={handleFormSubmit} className="form-neon-rsvp" style={buildFormStyle()}>
                   <h2>{template.name}</h2>
                   <p className="subtitle">{template.subtitle}</p>
                   {template.fields.map((f) => renderField(f))}
@@ -448,7 +931,7 @@ export default function TemplateDetail() {
 
               {/* 7. Premium Order Form (Pro) */}
               {template.styleName === "checkout-premium" && (
-                <form onSubmit={handleFormSubmit} className="form-checkout-premium">
+                <form onSubmit={handleFormSubmit} className="form-checkout-premium" style={buildFormStyle()}>
                   <h2>{template.name}</h2>
                   {template.fields.map((f) => renderField(f))}
                   <button type="submit" className="btn-submit">
@@ -459,12 +942,12 @@ export default function TemplateDetail() {
 
               {/* 8. CSAT Feedback (Pro) */}
               {template.styleName === "csat-feedback" && (
-                <div className="form-csat-feedback">
+                <div className="form-csat-feedback" style={{ borderRadius: `${design.formBorderRadius}px` }}>
                   <div className="csat-header">
                     <h2>{template.name}</h2>
                     <p>{template.subtitle}</p>
                   </div>
-                  <form onSubmit={handleFormSubmit} className="csat-body">
+                  <form onSubmit={handleFormSubmit} className="csat-body" style={{ fontFamily: `'${design.fontFamily}', sans-serif`, fontSize: `${design.fontSize}px` }}>
                     {template.fields.map((f) => renderField(f))}
                     <button type="submit" className="btn-submit" style={{ marginTop: "12px" }}>
                       {template.submitText}
@@ -475,7 +958,7 @@ export default function TemplateDetail() {
 
               {/* 9. Academy Registration (Pro) */}
               {template.styleName === "academy-signup" && (
-                <form onSubmit={handleFormSubmit} className="form-academy-signup">
+                <form onSubmit={handleFormSubmit} className="form-academy-signup" style={buildFormStyle()}>
                   <h2>{template.name}</h2>
                   <p className="subtitle">{template.subtitle}</p>
                   {template.fields.map((f) => renderField(f))}
@@ -484,8 +967,7 @@ export default function TemplateDetail() {
                   </button>
                 </form>
               )}
-
-            </>
+            </div>
           )}
 
         </div>

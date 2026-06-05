@@ -5,6 +5,9 @@ import {
   shopifyApp,
   BillingInterval,
 } from "@shopify/shopify-app-react-router/server";
+
+// Billing API requires AppStore distribution — SingleMerchant is NOT supported.
+// See: https://shopify.dev/docs/apps/billing
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
 
@@ -32,12 +35,12 @@ export const PLAN_PRO = "Pro Plan";
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
-  apiVersion: ApiVersion.October25,
+  apiVersion: ApiVersion.July25,
   scopes: process.env.SCOPES?.split(","),
   appUrl,
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma),
-  distribution: AppDistribution.SingleMerchant,
+  distribution: AppDistribution.AppStore,
 
   future: {
     expiringOfflineAccessTokens: true,
@@ -70,7 +73,7 @@ const shopify = shopifyApp({
   },
 });
 export default shopify;
-export const apiVersion = ApiVersion.October25;
+export const apiVersion = ApiVersion.July25;
 export const addDocumentResponseHeaders = shopify.addDocumentResponseHeaders;
 export const authenticate = shopify.authenticate;
 export const unauthenticated = shopify.unauthenticated;
