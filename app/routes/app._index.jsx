@@ -1,3 +1,4 @@
+/* global process */
 import { useState } from "react";
 import { useLoaderData, useNavigate, Form } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
@@ -12,13 +13,13 @@ export const loader = async ({ request }) => {
   // Sync active Shopify Billing plans to DB
   const billingCheck = await billing.check({
     plans: [PLAN_STARTER, PLAN_PRO],
-    isTest: true,
+    isTest: process.env.NODE_ENV !== "production",
   });
 
   let activePlan = "free";
   if (billingCheck.hasActivePayment && billingCheck.appSubscriptions && billingCheck.appSubscriptions.length > 0) {
     const activeSub = billingCheck.appSubscriptions.find(
-      (sub) => sub.status === "ACTIVE" || sub.status === "active"
+      (sub) => sub.status === "ACTIVE" || sub.status === "active" || sub.status === "ACCEPTED"
     );
     if (activeSub) {
       if (activeSub.name === PLAN_PRO) {
@@ -55,13 +56,29 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, billing } = await authenticate.admin(request);
   const shop = session.shop;
 
   const formData = await request.formData();
   const actionType = formData.get("actionType");
 
   if (actionType === "resetPlan") {
+    // Cancel subscriptions in Shopify
+    const billingCheck = await billing.check({
+      plans: [PLAN_STARTER, PLAN_PRO],
+      isTest: process.env.NODE_ENV !== "production",
+    });
+    if (billingCheck.appSubscriptions) {
+      for (const sub of billingCheck.appSubscriptions) {
+        if (sub.status === "ACTIVE" || sub.status === "active" || sub.status === "ACCEPTED") {
+          await billing.cancel({
+            subscriptionId: sub.id,
+            isTest: process.env.NODE_ENV !== "production",
+            prorate: true,
+          });
+        }
+      }
+    }
     await prisma.storeSubscription.upsert({
       where: { shop },
       update: { plan: "free" },

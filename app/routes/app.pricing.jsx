@@ -1,8 +1,10 @@
+/* global process */
 import {
   useLoaderData,
   useNavigate,
   redirect,
   useFetcher,
+  useActionData,
   Form,
 } from "react-router";
 import { useState, useCallback, useEffect } from "react";
@@ -23,7 +25,7 @@ export const loader = async ({ request }) => {
   try {
     const billingCheck = await billing.check({
       plans: [PLAN_STARTER, PLAN_PRO],
-      isTest: true,
+      isTest: process.env.NODE_ENV !== "production",
     });
 
     if (
@@ -133,15 +135,15 @@ export const action = async ({ request }) => {
     try {
       const billingCheck = await billing.check({
         plans: [PLAN_STARTER, PLAN_PRO],
-        isTest: true,
+        isTest: process.env.NODE_ENV !== "production",
       });
 
       if (billingCheck.appSubscriptions) {
         for (const sub of billingCheck.appSubscriptions) {
-          if (sub.status === "ACTIVE" || sub.status === "active") {
+          if (sub.status === "ACTIVE" || sub.status === "active" || sub.status === "ACCEPTED") {
             await billing.cancel({
               subscriptionId: sub.id,
-              isTest: true,
+              isTest: process.env.NODE_ENV !== "production",
               prorate: true,
             });
             console.log(`[Billing] Cancelled subscription "${sub.name}" for ${shop}`);
@@ -183,13 +185,20 @@ export const action = async ({ request }) => {
   // billing.request() throws a Response (302 redirect to Shopify's
   // billing approval page). We intentionally DO NOT catch it — letting
   // it propagate through React Router. Shopify App Bridge will
-  // intercept the redirect and open the billing page at the top level,
-  // preventing the black-screen iframe issue.
-  await billing.request({
-    plan: planName,
-    isTest: true,
-    returnUrl,
-  });
+  // prevent the black-screen iframe issue, but since Remix Form uses fetch, 
+  // we catch the redirect response and return it to the client.
+  try {
+    await billing.request({
+      plan: planName,
+      isTest: process.env.NODE_ENV !== "production",
+      returnUrl,
+    });
+  } catch (error) {
+    if (error instanceof Response && (error.status === 302 || error.status === 301)) {
+      return { billingUrl: error.headers.get("Location") };
+    }
+    throw error;
+  }
 
   // If billing.request() returns normally (shouldn't happen), provide fallback
   return { billingError: "Billing request did not produce a redirect. Please try again." };
@@ -206,6 +215,18 @@ export default function Pricing() {
   const fetcher = useFetcher();
 
   const [actionError, setActionError] = useState(null);
+
+  // Handle the top-level redirect for billing upgrade
+  const actionData = useActionData();
+  useEffect(() => {
+    if (actionData?.billingUrl) {
+      shopify.toast.show("Redirecting to billing approval...");
+      window.open(actionData.billingUrl, "_top");
+    }
+    if (actionData?.billingError) {
+      setActionError(actionData.billingError);
+    }
+  }, [actionData, shopify]);
 
   // Track fetcher state for the free downgrade
   const isDowngrading = fetcher.state !== "idle" && fetcher.formData?.get("plan") === "free";

@@ -6,17 +6,17 @@ application_url = "https://formdesign.androgamesinfotech.tech"
 embedded = true
 
 [build]
-automatically_update_urls_on_dev = true
+automatically_update_urls_on_dev = false
 
 [webhooks]
 api_version = "2025-07"
 
   [[webhooks.subscriptions]]
-  uri = "https://form-design-opal.vercel.app/webhooks/app/scopes_update"
+  uri = "https://formdesign.androgamesinfotech.tech/webhooks/app/scopes_update"
   topics = [ "app/scopes_update" ]
 
   [[webhooks.subscriptions]]
-  uri = "https://form-design-opal.vercel.app/webhooks/app/uninstalled"
+  uri = "https://formdesign.androgamesinfotech.tech/webhooks/app/uninstalled"
   topics = [ "app/uninstalled" ]
 
 [access_scopes]

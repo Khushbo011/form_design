@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useLoaderData, useNavigate, Form, useNavigation } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
