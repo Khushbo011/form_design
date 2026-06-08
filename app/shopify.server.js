@@ -4,6 +4,7 @@ import {
   AppDistribution,
   shopifyApp,
   BillingInterval,
+  DeliveryMethod,
 } from "@shopify/shopify-app-react-router/server";
 
 // Billing API requires AppStore distribution — SingleMerchant is NOT supported.
@@ -42,6 +43,16 @@ const shopify = shopifyApp({
   sessionStorage: new PrismaSessionStorage(prisma),
   distribution: AppDistribution.AppStore,
   isEmbeddedApp: true,
+  webhooks: {
+    APP_UNINSTALLED: {
+      deliveryMethod: DeliveryMethod.Http,
+      callbackUrl: "/webhooks/app/uninstalled",
+    },
+    APP_SCOPES_UPDATE: {
+      deliveryMethod: DeliveryMethod.Http,
+      callbackUrl: "/webhooks/app/scopes_update",
+    },
+  },
 
   future: {
     expiringOfflineAccessTokens: true,
