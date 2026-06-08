@@ -11,27 +11,35 @@ automatically_update_urls_on_dev = false
 [webhooks]
 api_version = "2025-07"
 
-  [webhooks.privacy_compliance]
-  customer_deletion_url = "https://formdesign.androgamesinfotech.tech/webhooks/customers/redact"
-  customer_data_request_url = "https://formdesign.androgamesinfotech.tech/webhooks/customers/data_request"
-  shop_deletion_url = "https://formdesign.androgamesinfotech.tech/webhooks/shop/redact"
+# ✅ Privacy Compliance Webhooks (CORRECT + REQUIRED FORMAT)
+[[webhooks.subscriptions]]
+compliance_topics = ["customers/data_request"]
+uri = "https://formdesign.androgamesinfotech.tech/webhooks/customers/data_request"
 
-  [[webhooks.subscriptions]]
-  uri = "https://formdesign.androgamesinfotech.tech/webhooks/app/scopes_update"
-  topics = [ "app/scopes_update" ]
+[[webhooks.subscriptions]]
+compliance_topics = ["customers/redact"]
+uri = "https://formdesign.androgamesinfotech.tech/webhooks/customers/redact"
 
-  [[webhooks.subscriptions]]
-  uri = "https://formdesign.androgamesinfotech.tech/webhooks/app/uninstalled"
-  topics = [ "app/uninstalled" ]
+[[webhooks.subscriptions]]
+compliance_topics = ["shop/redact"]
+uri = "https://formdesign.androgamesinfotech.tech/webhooks/shop/redact"
+
+# App lifecycle webhooks
+[[webhooks.subscriptions]]
+uri = "https://formdesign.androgamesinfotech.tech/webhooks/app/scopes_update"
+topics = ["app/scopes_update"]
+
+[[webhooks.subscriptions]]
+uri = "https://formdesign.androgamesinfotech.tech/webhooks/app/uninstalled"
+topics = ["app/uninstalled"]
 
 [access_scopes]
-# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "write_metaobject_definitions,write_metaobjects,write_products"
-optional_scopes = [ ]
+optional_scopes = []
 use_legacy_install_flow = false
 
 [auth]
-redirect_urls = [ "https://formdesign.androgamesinfotech.tech/auth/callback" ]
+redirect_urls = ["https://formdesign.androgamesinfotech.tech/auth/callback"]
 
 [product.metafields.app.demo_info]
 type = "single_line_text_field"
