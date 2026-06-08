@@ -1,23 +1,31 @@
-import { authenticate } from "../shopify.server";
+import crypto from "crypto";
 
 export const loader = async () => {
-  // Return 200 for GET requests so that automated checks or browser visits don't crash with 405 or 500
   return new Response("Webhook endpoint is active", { status: 200 });
 };
 
 export const action = async ({ request }) => {
   try {
-    const { shop, topic } = await authenticate.webhook(request);
+    const rawBody = await request.text();
+    const hmacHeader = request.headers.get("X-Shopify-Hmac-Sha256");
 
-    console.log(`Received ${topic} webhook for ${shop}`);
+    if (!hmacHeader) {
+      return new Response("Missing HMAC header", { status: 401 });
+    }
 
-    // Payload has the customer redact request
+    const generatedHash = crypto
+      .createHmac("sha256", process.env.SHOPIFY_API_SECRET)
+      .update(rawBody, "utf-8")
+      .digest("base64");
+
+    if (generatedHash !== hmacHeader) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    console.log("Verified customers/redact webhook");
+
     return new Response(null, { status: 200 });
   } catch (error) {
-    if (error instanceof Response) {
-      return error;
-    }
-    
     console.error("Error in customers/redact webhook:", error);
     return new Response("Webhook error", { status: 500 });
   }
