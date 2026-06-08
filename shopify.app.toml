@@ -11,6 +11,11 @@ automatically_update_urls_on_dev = false
 [webhooks]
 api_version = "2025-07"
 
+  [webhooks.privacy_compliance]
+  customer_deletion_url = "https://formdesign.androgamesinfotech.tech/webhooks/customers/redact"
+  customer_data_request_url = "https://formdesign.androgamesinfotech.tech/webhooks/customers/data_request"
+  shop_deletion_url = "https://formdesign.androgamesinfotech.tech/webhooks/shop/redact"
+
   [[webhooks.subscriptions]]
   uri = "https://formdesign.androgamesinfotech.tech/webhooks/app/scopes_update"
   topics = [ "app/scopes_update" ]
