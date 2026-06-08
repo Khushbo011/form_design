@@ -93,7 +93,8 @@ export const loader = async ({ request }) => {
     ) {
       // Successfully subscribed — redirect to dashboard
       console.log(`[Billing] Plan "${requestedPlan}" activated for ${shop}. Redirecting to dashboard.`);
-      throw redirect("/app");
+      // throw redirect("/app");
+      throw redirect(`/app?shop=${shop}`);
     }
 
     // User cancelled or declined — stay on pricing page with a message
@@ -177,8 +178,9 @@ export const action = async ({ request }) => {
   const planName = requestedPlan === "pro" ? PLAN_PRO : PLAN_STARTER;
 
   // Build return URL — user comes back here after approving/declining
-  const reqUrl = new URL(request.url);
-  const returnUrl = `${reqUrl.origin}/app/pricing?plan=${requestedPlan}&shop=${shop}`;
+  // For embedded apps, the return URL must point to the embedded app inside the Shopify admin.
+  // Otherwise, returning to the app's origin URL at the top level will trigger a redirect to /auth/login.
+  const returnUrl = `https://${shop}/admin/apps/${process.env.SHOPIFY_API_KEY}/app`;
 
   console.log(`[Billing] Requesting "${planName}" for ${shop}, returnUrl: ${returnUrl}`);
 
@@ -194,8 +196,36 @@ export const action = async ({ request }) => {
       returnUrl,
     });
   } catch (error) {
-    if (error instanceof Response && (error.status === 302 || error.status === 301)) {
-      return { billingUrl: error.headers.get("Location") };
+    if (error instanceof Response) {
+      const reauthUrl = error.headers.get("X-Shopify-API-Request-Failure-Reauthorize-Url");
+      if (reauthUrl) {
+        return { billingUrl: reauthUrl };
+      }
+
+      const location = error.headers.get("Location");
+      if (location) {
+        return { billingUrl: location };
+      }
+
+      const contentType = error.headers.get("Content-Type") || "";
+      if (contentType.includes("text/html")) {
+        const text = await error.text();
+        const topLocationMatch = text.match(/window\.top\.location\.href\s*=\s*['"]([^'"]+)['"]/);
+        if (topLocationMatch && topLocationMatch[1]) {
+          return { billingUrl: topLocationMatch[1].replace(/\\\//g, '/') };
+        }
+
+        const actionMatch = text.match(/location['"]?\s*:\s*['"]([^'"]+)['"]/);
+        if (actionMatch && actionMatch[1]) {
+          return { billingUrl: actionMatch[1].replace(/\\\//g, '/') };
+        }
+
+        // If parsing fails, return a special flag so the frontend can trigger a full reload
+        return { requireFullReload: true };
+      }
+
+      // If we don't know how to handle it, return the status
+      return { billingError: `Unexpected response status: ${error.status}` };
     }
     throw error;
   }
@@ -222,7 +252,13 @@ export default function Pricing() {
     if (actionData?.billingUrl) {
       shopify.toast.show("Redirecting to billing approval...");
       window.open(actionData.billingUrl, "_top");
+    } else if (actionData?.requireFullReload) {
+      // Fallback: If we couldn't parse the URL, force a full page reload for the form submission
+      // so the browser handles the HTML script natively.
+      shopify.toast.show("Redirecting...", { isError: false });
+      window.top.location.reload();
     }
+
     if (actionData?.billingError) {
       setActionError(actionData.billingError);
     }
@@ -398,7 +434,7 @@ export default function Pricing() {
           {/* Standard form POST — the redirect from billing.request() will
               propagate through React Router. App Bridge intercepts it and
               opens the Shopify billing page at the top level. */}
-          <Form method="post" id="starter-plan-form">
+          <Form method="post" id="starter-plan-form" reloadDocument={actionData?.requireFullReload}>
             <input type="hidden" name="plan" value="starter" />
             <button
               type="submit"
@@ -463,7 +499,7 @@ export default function Pricing() {
             </li>
           </ul>
 
-          <Form method="post" id="pro-plan-form">
+          <Form method="post" id="pro-plan-form" reloadDocument={actionData?.requireFullReload}>
             <input type="hidden" name="plan" value="pro" />
             <button
               type="submit"
