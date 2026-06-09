@@ -11,21 +11,21 @@ automatically_update_urls_on_dev = true
 [webhooks]
 api_version = "2025-07"
 
-  [[webhooks.subscriptions]]
-  uri = "https://form-design-opal.vercel.app/webhooks/app/scopes_update"
-  topics = [ "app/scopes_update" ]
+[[webhooks.subscriptions]]
+uri = "https://form-design-opal.vercel.app/webhooks/app/scopes_update"
+topics = ["app/scopes_update"]
 
-  [[webhooks.subscriptions]]
-  uri = "https://form-design-opal.vercel.app/webhooks/app/uninstalled"
-  topics = [ "app/uninstalled" ]
+[[webhooks.subscriptions]]
+uri = "https://form-design-opal.vercel.app/webhooks/app/uninstalled"
+topics = ["app/uninstalled"]
 
-  [[webhooks.subscriptions]]
+[[webhooks.subscriptions]]
+uri = "https://formdesign.androgamesinfotech.tech/webhooks"
 compliance_topics = [
   "customers/data_request",
   "customers/redact",
   "shop/redact"
 ]
-uri = "https://formdesign.androgamesinfotech.tech/webhooks"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
