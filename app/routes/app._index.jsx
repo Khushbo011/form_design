@@ -11,10 +11,18 @@ export const loader = async ({ request }) => {
   const shop = session.shop;
 
   // Sync active Shopify Billing plans to DB
-  const billingCheck = await billing.check({
+  let isTestEnv = process.env.NODE_ENV !== "production";
+  let billingCheck = await billing.check({
     plans: [PLAN_STARTER, PLAN_PRO],
-    isTest: process.env.NODE_ENV !== "production",
+    isTest: isTestEnv,
   });
+
+  if (!billingCheck.hasActivePayment) {
+    billingCheck = await billing.check({
+      plans: [PLAN_STARTER, PLAN_PRO],
+      isTest: true,
+    });
+  }
 
   let activePlan = "free";
   if (billingCheck.hasActivePayment && billingCheck.appSubscriptions && billingCheck.appSubscriptions.length > 0) {
@@ -64,10 +72,18 @@ export const action = async ({ request }) => {
 
   if (actionType === "resetPlan") {
     // Cancel subscriptions in Shopify
-    const billingCheck = await billing.check({
+    let isTestEnv = process.env.NODE_ENV !== "production";
+    let billingCheck = await billing.check({
       plans: [PLAN_STARTER, PLAN_PRO],
-      isTest: process.env.NODE_ENV !== "production",
+      isTest: isTestEnv,
     });
+    
+    if (!billingCheck.hasActivePayment) {
+      billingCheck = await billing.check({
+        plans: [PLAN_STARTER, PLAN_PRO],
+        isTest: true,
+      });
+    }
     if (billingCheck.appSubscriptions) {
       for (const sub of billingCheck.appSubscriptions) {
         if (sub.status === "ACTIVE" || sub.status === "active" || sub.status === "ACCEPTED") {

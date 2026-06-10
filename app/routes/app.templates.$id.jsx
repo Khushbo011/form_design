@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
 import { useState, useCallback, useRef, useEffect } from "react";
-import { useLoaderData, useNavigate, Form, useNavigation } from "react-router";
+import { useLoaderData, useNavigate, Form, useNavigation, useActionData } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import prisma from "../db.server";
 import { authenticate, PLAN_STARTER, PLAN_PRO } from "../shopify.server";
@@ -11,16 +11,25 @@ export const loader = async ({ request, params }) => {
   const shop = session.shop;
   const templateId = params.id;
 
-  // Sync active Shopify Billing plans to DB
-  const billingCheck = await billing.check({
+  let isTestEnv = process.env.NODE_ENV !== "production";
+  let billingCheck = await billing.check({
     plans: [PLAN_STARTER, PLAN_PRO],
-    isTest: true,
+    isTest: isTestEnv,
   });
+
+  if (!billingCheck.hasActivePayment) {
+    // Fallback: Check for test charges. App Reviewers test in production with dev stores,
+    // which automatically create test charges.
+    billingCheck = await billing.check({
+      plans: [PLAN_STARTER, PLAN_PRO],
+      isTest: true,
+    });
+  }
 
   let activePlan = "free";
   if (billingCheck.hasActivePayment && billingCheck.appSubscriptions && billingCheck.appSubscriptions.length > 0) {
     const activeSub = billingCheck.appSubscriptions.find(
-      (sub) => sub.status === "ACTIVE" || sub.status === "active"
+      (sub) => sub.status === "ACTIVE" || sub.status === "active" || sub.status === "ACCEPTED"
     );
     if (activeSub) {
       if (activeSub.name === PLAN_PRO) {
@@ -68,10 +77,50 @@ export const loader = async ({ request, params }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, billing } = await authenticate.admin(request);
   const shop = session.shop;
   const formData = await request.formData();
+  const actionType = formData.get("actionType");
   const templateId = formData.get("templateId");
+
+  if (actionType === "upgrade") {
+    const planToUpgrade = formData.get("planToUpgrade");
+    const planName = planToUpgrade === "pro" ? PLAN_PRO : PLAN_STARTER;
+    const returnUrl = `https://${shop}/admin/apps/${process.env.SHOPIFY_API_KEY}/app`;
+
+    try {
+      await billing.request({
+        plan: planName,
+        isTest: process.env.NODE_ENV !== "production",
+        returnUrl,
+      });
+    } catch (error) {
+      if (error instanceof Response) {
+        const reauthUrl = error.headers.get("X-Shopify-API-Request-Failure-Reauthorize-Url");
+        if (reauthUrl) return { billingUrl: reauthUrl };
+
+        const location = error.headers.get("Location");
+        if (location) return { billingUrl: location };
+
+        const contentType = error.headers.get("Content-Type") || "";
+        if (contentType.includes("text/html")) {
+          const text = await error.text();
+          const topLocationMatch = text.match(/window\.top\.location\.href\s*=\s*['"]([^'"]+)['"]/);
+          if (topLocationMatch && topLocationMatch[1]) {
+            return { billingUrl: topLocationMatch[1].replace(/\\\//g, '/') };
+          }
+          const actionMatch = text.match(/location['"]?\s*:\s*['"]([^'"]+)['"]/);
+          if (actionMatch && actionMatch[1]) {
+            return { billingUrl: actionMatch[1].replace(/\\\//g, '/') };
+          }
+          return { requireFullReload: true };
+        }
+        return { billingError: `Unexpected response status: ${error.status}` };
+      }
+      throw error;
+    }
+    return { billingError: "Billing request did not produce a redirect." };
+  }
 
   // Save template usage details into database
   await prisma.templateUsage.create({
@@ -240,6 +289,7 @@ export default function TemplateDetail() {
   const navigate = useNavigate();
   const shopify = useAppBridge();
   const navigation = useNavigation();
+  const actionData = useActionData();
   const customStyleRef = useRef(null);
 
   const isSaving = navigation.state === "submitting";
@@ -278,6 +328,20 @@ export default function TemplateDetail() {
       }
     };
   }, [design.customCss]);
+
+  // ── Handle Action Data (Billing / Success) ────────────────────────────────
+  useEffect(() => {
+    if (actionData?.success) {
+      shopify.toast.show("Template activated successfully!");
+    } else if (actionData?.billingUrl) {
+      shopify.toast.show("Redirecting to billing approval...");
+      window.open(actionData.billingUrl, "_top");
+    } else if (actionData?.requireFullReload) {
+      window.top.location.reload();
+    } else if (actionData?.billingError) {
+      shopify.toast.show(actionData.billingError, { isError: true });
+    }
+  }, [actionData, shopify]);
 
   // ── Load Google Font dynamically ──────────────────────────────────────────
   useEffect(() => {
@@ -734,17 +798,19 @@ export default function TemplateDetail() {
                 <s-heading size="small">Actions</s-heading>
                 
                 {/* Database logging: use standard form post to log template activation */}
-                <Form method="post" style={{ marginTop: "12px" }}>
+                <Form method="post" style={{ marginTop: "12px" }} reloadDocument={actionData?.requireFullReload}>
                   <input type="hidden" name="templateId" value={template.id} />
+                  <input type="hidden" name="actionType" value={isLocked ? "upgrade" : "use"} />
+                  <input type="hidden" name="planToUpgrade" value={template.type === "starter" ? "starter" : "pro"} />
                   
                   {!isLocked ? (
-                    <s-button submit variant="primary" disabled={isSaving}>
+                    <button type="submit" className="plan-btn" style={{ padding: "8px 16px", borderRadius: "8px", background: "#008060", color: "#fff", border: "none", cursor: "pointer" }} disabled={isSaving}>
                       {isSaving ? "Saving..." : "Use Template"}
-                    </s-button>
+                    </button>
                   ) : (
-                    <s-button onClick={() => navigate("/app/pricing")} variant="secondary">
-                      Unlock Template
-                    </s-button>
+                    <button type="submit" className="plan-btn" style={{ padding: "8px 16px", borderRadius: "8px", background: "var(--color-pro)", color: "#fff", border: "none", cursor: "pointer" }} disabled={isSaving}>
+                      {isSaving ? "Redirecting..." : "Use Template"}
+                    </button>
                   )}
                 </Form>
 

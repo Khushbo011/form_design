@@ -23,10 +23,18 @@ export const loader = async ({ request }) => {
   let billingError = null;
 
   try {
-    const billingCheck = await billing.check({
+    let isTestEnv = process.env.NODE_ENV !== "production";
+    let billingCheck = await billing.check({
       plans: [PLAN_STARTER, PLAN_PRO],
-      isTest: process.env.NODE_ENV !== "production",
+      isTest: isTestEnv,
     });
+
+    if (!billingCheck.hasActivePayment) {
+      billingCheck = await billing.check({
+        plans: [PLAN_STARTER, PLAN_PRO],
+        isTest: true,
+      });
+    }
 
     if (
       billingCheck.hasActivePayment &&
@@ -134,10 +142,18 @@ export const action = async ({ request }) => {
   // ── Handle downgrade to free ──────────────────────────────────────────
   if (requestedPlan === "free") {
     try {
-      const billingCheck = await billing.check({
+      let isTestEnv = process.env.NODE_ENV !== "production";
+      let billingCheck = await billing.check({
         plans: [PLAN_STARTER, PLAN_PRO],
-        isTest: process.env.NODE_ENV !== "production",
+        isTest: isTestEnv,
       });
+
+      if (!billingCheck.hasActivePayment) {
+        billingCheck = await billing.check({
+          plans: [PLAN_STARTER, PLAN_PRO],
+          isTest: true,
+        });
+      }
 
       if (billingCheck.appSubscriptions) {
         for (const sub of billingCheck.appSubscriptions) {
