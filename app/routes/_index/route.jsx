@@ -1,11 +1,20 @@
 import { redirect, Form, useLoaderData } from "react-router";
-import { login } from "../../shopify.server";
+import { login, authenticate } from "../../shopify.server";
 
 export const loader = async ({ request }) => {
   const url = new URL(request.url);
 
-  if (url.searchParams.get("shop")) {
-    throw redirect(`/app?${url.searchParams.toString()}`);
+  // If this is an embedded app load or a client-side navigation from Shopify App Bridge,
+  // we validate the session to ensure proper re-authentication if needed.
+  const isEmbeddedRequest = 
+    url.searchParams.get("shop") || 
+    url.searchParams.get("id_token") ||
+    url.searchParams.get("embedded") === "1" ||
+    request.headers.get("Authorization");
+
+  if (isEmbeddedRequest) {
+    await authenticate.admin(request);
+    return redirect(url.search ? `/app${url.search}` : "/app");
   }
 
   return { showForm: Boolean(login) };
