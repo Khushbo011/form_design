@@ -1,5 +1,5 @@
 import { redirect, Form, useLoaderData } from "react-router";
-import { login, authenticate } from "../../shopify.server";
+import { login } from "../../shopify.server";
 
 export const loader = async ({ request }) => {
   const url = new URL(request.url);
@@ -13,7 +13,6 @@ export const loader = async ({ request }) => {
     request.headers.get("Authorization");
 
   if (isEmbeddedRequest) {
-    await authenticate.admin(request);
     return redirect(url.search ? `/app${url.search}` : "/app");
   }
 

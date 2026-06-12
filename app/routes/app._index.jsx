@@ -1,6 +1,6 @@
 /* global process */
-import { useState } from "react";
-import { useLoaderData, useNavigate, Form, redirect } from "react-router";
+import { useState, useEffect } from "react";
+import { useLoaderData, useNavigate, Form, redirect, useActionData } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import prisma from "../db.server";
 import { authenticate, PLAN_STARTER, PLAN_PRO } from "../shopify.server";
@@ -115,7 +115,7 @@ export const action = async ({ request }) => {
     const url = new URL(request.url);
     url.pathname = `/app/templates/${templateId}`;
     url.searchParams.set("success", "true");
-    return redirect(url.toString());
+    return { success: true, redirectUrl: url.pathname + url.search };
   }
 
   return { success: true };
@@ -125,6 +125,13 @@ export default function Gallery() {
   const { plan: currentPlan = "free" } = useLoaderData();
   const navigate = useNavigate();
   const shopify = useAppBridge();
+  const actionData = useActionData();
+
+  useEffect(() => {
+    if (actionData?.redirectUrl) {
+      navigate(actionData.redirectUrl);
+    }
+  }, [actionData, navigate]);
 
   const [activeCategory, setActiveCategory] = useState("all");
   const [activeTier, setActiveTier] = useState("all");
