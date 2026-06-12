@@ -93,7 +93,7 @@ export const loader = async ({ request, params }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session, billing } = await authenticate.admin(request);
+  const { session, billing, admin } = await authenticate.admin(request);
   const shop = session.shop;
   const formData = await request.formData();
   const actionType = formData.get("actionType");
@@ -141,24 +141,122 @@ export const action = async ({ request }) => {
   if (actionType === "save" || actionType === "use") {
     const configData = formData.get("configData");
     const tpl = FORM_TEMPLATES.find((t) => t.id === templateId);
+    const templateName = tpl ? tpl.name : "Unknown";
     
     await prisma.selectedTemplate.upsert({
       where: { shop },
       update: {
         templateId,
-        templateName: tpl ? tpl.name : "Unknown",
+        templateName,
         configData,
         updatedAt: new Date(),
       },
       create: {
         shop,
         templateId,
-        templateName: tpl ? tpl.name : "Unknown",
+        templateName,
         configData,
       },
     });
 
-    return { saved: true };
+    let pageUrl = null;
+
+    if (actionType === "save") {
+      const design = JSON.parse(configData || "{}");
+      const pageTitle = `${templateName}`;
+      
+      const formFieldsHtml = tpl?.fields?.map(f => {
+        if (f.type === "textarea") {
+          return `<div style="margin-bottom: ${design.fieldSpacing || 16}px;">
+            <label style="display:block; margin-bottom: 4px; font-weight: ${design.labelFontWeight}; font-size: ${design.labelFontSize}px; color: ${design.labelColor}">${f.label} ${f.required ? '*' : ''}</label>
+            <textarea rows="4" placeholder="${f.placeholder || ''}" ${f.required ? 'required' : ''} style="width:100%; padding: 8px; border: ${design.formBorderWidth}px solid ${design.inputBorderColor}; border-radius: ${design.inputBorderRadius}px; background: ${design.inputBg}; color: ${design.inputTextColor};"></textarea>
+          </div>`;
+        } else if (f.type === "select") {
+          return `<div style="margin-bottom: ${design.fieldSpacing || 16}px;">
+            <label style="display:block; margin-bottom: 4px; font-weight: ${design.labelFontWeight}; font-size: ${design.labelFontSize}px; color: ${design.labelColor}">${f.label} ${f.required ? '*' : ''}</label>
+            <select ${f.required ? 'required' : ''} style="width:100%; padding: 8px; border: ${design.formBorderWidth}px solid ${design.inputBorderColor}; border-radius: ${design.inputBorderRadius}px; background: ${design.inputBg}; color: ${design.inputTextColor};">
+              ${f.options ? f.options.map(o => `<option>${o}</option>`).join('') : ''}
+            </select>
+          </div>`;
+        } else if (f.type === "checkbox") {
+          return `<div style="margin-bottom: ${design.fieldSpacing || 16}px;">
+            <label style="display:flex; align-items:center; font-weight: ${design.labelFontWeight}; font-size: ${design.labelFontSize}px; color: ${design.labelColor}">
+              <input type="checkbox" ${f.required ? 'required' : ''} style="margin-right: 8px; transform: scale(1.2);" />
+              ${f.label} ${f.required ? '*' : ''}
+            </label>
+          </div>`;
+        } else {
+          return `<div style="margin-bottom: ${design.fieldSpacing || 16}px;">
+            <label style="display:block; margin-bottom: 4px; font-weight: ${design.labelFontWeight}; font-size: ${design.labelFontSize}px; color: ${design.labelColor}">${f.label} ${f.required ? '*' : ''}</label>
+            <input type="${f.type}" placeholder="${f.placeholder || ''}" ${f.required ? 'required' : ''} style="width:100%; padding: 8px; border: ${design.formBorderWidth}px solid ${design.inputBorderColor}; border-radius: ${design.inputBorderRadius}px; background: ${design.inputBg}; color: ${design.inputTextColor};" />
+          </div>`;
+        }
+      }).join('') || "";
+
+      const pageHtml = `
+      <div style="font-family: ${design.fontFamily}, sans-serif; max-width: ${design.formWidth === 100 ? '100%' : design.formWidth + '%'}; margin: 24px auto; padding: ${design.formPadding}px; background-color: ${design.formBg}; color: ${design.formTextColor}; border-radius: ${design.formBorderRadius}px; border: ${design.formBorderWidth}px solid ${design.formBorderColor}; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <h2 style="font-size: ${design.fontSize + 6}px; margin-top: 0; margin-bottom: 24px;">${templateName}</h2>
+        <form onsubmit="event.preventDefault(); alert('Form submitted!');">
+          ${formFieldsHtml}
+          <button type="submit" style="background-color: ${design.buttonBg}; color: ${design.buttonTextColor}; border: none; border-radius: ${design.buttonBorderRadius}px; padding: ${design.buttonPadding}px 24px; font-size: ${design.fontSize}px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 8px;">
+            ${tpl?.submitText || 'Submit'}
+          </button>
+        </form>
+      </div>
+      `;
+
+      try {
+        const response = await admin.graphql(
+          `#graphql
+          mutation pageCreate($page: PageCreateInput!) {
+            pageCreate(page: $page) {
+              page {
+                id
+                handle
+                onlineStoreUrl
+              }
+              userErrors {
+                field
+                message
+              }
+            }
+          }`,
+          {
+            variables: {
+              page: {
+                title: pageTitle,
+                body: pageHtml,
+                templateSuffix: "",
+              },
+            },
+          }
+        );
+
+        const responseJson = await response.json();
+        const pageData = responseJson?.data?.pageCreate?.page;
+        
+        if (pageData) {
+          pageUrl = pageData.onlineStoreUrl || `https://${shop}/pages/${pageData.handle}`;
+          
+          await prisma.publishedForm.create({
+            data: {
+              shop,
+              templateId,
+              templateName,
+              configData,
+              pageId: pageData.id,
+              pageUrl: pageUrl,
+            }
+          });
+        } else {
+          console.error("Page creation user errors:", responseJson?.data?.pageCreate?.userErrors);
+        }
+      } catch (err) {
+        console.error("GraphQL error creating page:", err);
+      }
+    }
+
+    return { saved: true, pageUrl };
   }
 
   return { success: true };
@@ -366,7 +464,15 @@ export default function TemplateDetail() {
   // ── Handle Action Data (Billing / Success) ────────────────────────────────
   useEffect(() => {
     if (actionData?.saved) {
-      shopify.toast.show("Template saved successfully!");
+      if (actionData?.pageUrl) {
+        shopify.toast.show("Template saved successfully and published to your storefront.", { duration: 5000 });
+        // Redirect the top level to the storefront page
+        setTimeout(() => {
+          window.open(actionData.pageUrl, "_blank");
+        }, 1500);
+      } else {
+        shopify.toast.show("Template saved successfully!");
+      }
     } else if (actionData?.success) {
       shopify.toast.show("Template activated successfully!");
     } else if (actionData?.billingUrl) {
