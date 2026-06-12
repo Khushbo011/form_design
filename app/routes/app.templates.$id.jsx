@@ -1,3 +1,4 @@
+/* global process */
 /* eslint-disable react/prop-types, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useLoaderData, useNavigate, Form, useNavigation, useActionData } from "react-router";
@@ -68,11 +69,26 @@ export const loader = async ({ request, params }) => {
   const url = new URL(request.url);
   const isUnlockedFromQuery = url.searchParams.get("unlocked") === "true";
 
+  // Load saved configuration from database
+  const selectedTemplate = await prisma.selectedTemplate.findUnique({
+    where: { shop },
+  });
+
+  let savedConfig = null;
+  if (selectedTemplate && selectedTemplate.templateId === templateId && selectedTemplate.configData) {
+    try {
+      savedConfig = JSON.parse(selectedTemplate.configData);
+    } catch (e) {
+      console.error("Failed to parse saved config", e);
+    }
+  }
+
   return {
     shop,
     plan,
     template,
     isUnlockedFromQuery,
+    savedConfig,
   };
 };
 
@@ -122,13 +138,28 @@ export const action = async ({ request }) => {
     return { billingError: "Billing request did not produce a redirect." };
   }
 
-  // Save template usage details into database
-  await prisma.templateUsage.create({
-    data: {
-      shop,
-      templateId,
-    },
-  });
+  if (actionType === "save" || actionType === "use") {
+    const configData = formData.get("configData");
+    const tpl = FORM_TEMPLATES.find((t) => t.id === templateId);
+    
+    await prisma.selectedTemplate.upsert({
+      where: { shop },
+      update: {
+        templateId,
+        templateName: tpl ? tpl.name : "Unknown",
+        configData,
+        updatedAt: new Date(),
+      },
+      create: {
+        shop,
+        templateId,
+        templateName: tpl ? tpl.name : "Unknown",
+        configData,
+      },
+    });
+
+    return { saved: true };
+  }
 
   return { success: true };
 };
@@ -285,7 +316,7 @@ function CollapsibleSection({ icon, title, defaultOpen = false, children }) {
 
 // ─── MAIN COMPONENT ─────────────────────────────────────────────────────────
 export default function TemplateDetail() {
-  const { plan: currentPlan, template, isUnlockedFromQuery } = useLoaderData();
+  const { plan: currentPlan, template, isUnlockedFromQuery, savedConfig } = useLoaderData();
   const navigate = useNavigate();
   const shopify = useAppBridge();
   const navigation = useNavigation();
@@ -300,7 +331,10 @@ export default function TemplateDetail() {
   const [activePanel, setActivePanel] = useState("design"); // "design" | "info"
 
   // ── Design customization state ──────────────────────────────────────────
-  const [design, setDesign] = useState({ ...DEFAULT_DESIGN });
+  const [design, setDesign] = useState({
+    ...DEFAULT_DESIGN,
+    ...(savedConfig || {})
+  });
 
   const updateDesign = useCallback((key, value) => {
     setDesign((prev) => ({ ...prev, [key]: value }));
@@ -331,7 +365,9 @@ export default function TemplateDetail() {
 
   // ── Handle Action Data (Billing / Success) ────────────────────────────────
   useEffect(() => {
-    if (actionData?.success) {
+    if (actionData?.saved) {
+      shopify.toast.show("Template saved successfully!");
+    } else if (actionData?.success) {
       shopify.toast.show("Template activated successfully!");
     } else if (actionData?.billingUrl) {
       shopify.toast.show("Redirecting to billing approval...");
@@ -342,6 +378,17 @@ export default function TemplateDetail() {
       shopify.toast.show(actionData.billingError, { isError: true });
     }
   }, [actionData, shopify]);
+
+  // Handle URL success parameter
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("success") === "true") {
+      shopify.toast.show("Template selected successfully.");
+      // remove query param without reload
+      const newUrl = window.location.pathname + window.location.search.replace(/success=true&?|&success=true/, "");
+      window.history.replaceState(null, "", newUrl);
+    }
+  }, [shopify]);
 
   // ── Load Google Font dynamically ──────────────────────────────────────────
   useEffect(() => {
@@ -800,12 +847,13 @@ export default function TemplateDetail() {
                 {/* Database logging: use standard form post to log template activation */}
                 <Form method="post" style={{ marginTop: "12px" }} reloadDocument={actionData?.requireFullReload}>
                   <input type="hidden" name="templateId" value={template.id} />
-                  <input type="hidden" name="actionType" value={isLocked ? "upgrade" : "use"} />
+                  <input type="hidden" name="actionType" value={isLocked ? "upgrade" : "save"} />
                   <input type="hidden" name="planToUpgrade" value={template.type === "starter" ? "starter" : "pro"} />
+                  <input type="hidden" name="configData" value={JSON.stringify(design)} />
                   
                   {!isLocked ? (
                     <button type="submit" className="plan-btn" style={{ padding: "8px 16px", borderRadius: "8px", background: "#008060", color: "#fff", border: "none", cursor: "pointer" }} disabled={isSaving}>
-                      {isSaving ? "Saving..." : "Use Template"}
+                      {isSaving ? "Saving..." : "Save Template"}
                     </button>
                   ) : (
                     <button type="submit" className="plan-btn" style={{ padding: "8px 16px", borderRadius: "8px", background: "var(--color-pro)", color: "#fff", border: "none", cursor: "pointer" }} disabled={isSaving}>

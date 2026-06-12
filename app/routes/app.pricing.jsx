@@ -101,8 +101,9 @@ export const loader = async ({ request }) => {
     ) {
       // Successfully subscribed — redirect to dashboard
       console.log(`[Billing] Plan "${requestedPlan}" activated for ${shop}. Redirecting to dashboard.`);
-      // throw redirect("/app");
-      throw redirect(`/app?shop=${shop}`);
+      url.pathname = "/app";
+      url.searchParams.delete("plan");
+      throw redirect(url.toString());
     }
 
     // User cancelled or declined — stay on pricing page with a message

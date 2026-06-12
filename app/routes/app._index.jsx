@@ -1,6 +1,6 @@
 /* global process */
 import { useState } from "react";
-import { useLoaderData, useNavigate, Form } from "react-router";
+import { useLoaderData, useNavigate, Form, redirect } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import prisma from "../db.server";
 import { authenticate, PLAN_STARTER, PLAN_PRO } from "../shopify.server";
@@ -100,6 +100,22 @@ export const action = async ({ request }) => {
       update: { plan: "free" },
       create: { shop, plan: "free" },
     });
+  } else if (actionType === "useTemplate") {
+    const templateId = formData.get("templateId");
+    const templateName = formData.get("templateName");
+
+    // Save to DB
+    await prisma.selectedTemplate.upsert({
+      where: { shop },
+      update: { templateId, templateName, updatedAt: new Date() },
+      create: { shop, templateId, templateName },
+    });
+
+    // Redirect to the editor page
+    const url = new URL(request.url);
+    url.pathname = `/app/templates/${templateId}`;
+    url.searchParams.set("success", "true");
+    return redirect(url.toString());
   }
 
   return { success: true };
@@ -577,13 +593,17 @@ export default function Gallery() {
 
                       {/* Access logic buttons */}
                       {!isLocked ? (
-                        <button 
-                          type="button" 
-                          className="btn-use-template"
-                          onClick={() => navigate(`/app/templates/${template.id}?unlocked=true`)}
-                        >
-                          Use Template
-                        </button>
+                        <Form method="post" style={{ margin: 0, padding: 0 }}>
+                          <input type="hidden" name="actionType" value="useTemplate" />
+                          <input type="hidden" name="templateId" value={template.id} />
+                          <input type="hidden" name="templateName" value={template.name} />
+                          <button 
+                            type="submit" 
+                            className="btn-use-template"
+                          >
+                            Use Template
+                          </button>
+                        </Form>
                       ) : (
                         <button 
                           type="button" 

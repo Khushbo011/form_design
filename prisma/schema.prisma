@@ -46,3 +46,13 @@ model TemplateUsage {
   templateId String
   usedAt     DateTime @default(now())
 }
+
+model SelectedTemplate {
+  id           Int      @id @default(autoincrement())
+  shop         String   @unique
+  templateId   String
+  templateName String
+  configData   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
