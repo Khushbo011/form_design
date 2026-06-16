@@ -18,9 +18,10 @@ import { FORM_TEMPLATES } from "../templatesData";
 export const loader = async ({ request }) => {
   const url = new URL(request.url);
   const shop = url.searchParams.get("shop");
-  const formId = url.searchParams.get("formId");
-  const pageId = url.searchParams.get("pageId");
-  const templateId = url.searchParams.get("templateId");
+  const templateId = url.searchParams.get("templateId") || url.searchParams.get("selectedTemplate");
+
+  console.log("[Storefront API] Incoming request for shop:", shop);
+  console.log("[Storefront API: incomingTemplate] Incoming template ID parameter:", templateId);
 
   // CORS headers for storefront access
   const headers = {
@@ -36,43 +37,26 @@ export const loader = async ({ request }) => {
   }
 
   try {
-    // ── Single form lookup by UUID, Page ID, or Template ID ──────────────
-    if (formId || pageId || templateId) {
-      let publishedForm = null;
-      if (formId) {
-        publishedForm = await prisma.publishedForm.findUnique({
-          where: { id: formId },
-        });
-      } else if (pageId) {
-        // Normalize pageId to be the gid format
-        const normalizedPageId = pageId.startsWith("gid://") 
-          ? pageId 
-          : `gid://shopify/Page/${pageId}`;
+    // ── Single form lookup by Template ID ────────────────────────────────
+    if (templateId) {
+      const publishedForm = await prisma.publishedForm.findFirst({
+        where: {
+          shop: shop || undefined,
+          templateId: templateId,
+        },
+        orderBy: { createdAt: "desc" }
+      });
 
-        publishedForm = await prisma.publishedForm.findFirst({
-          where: { 
-            shop: shop || undefined,
-            pageId: normalizedPageId 
-          },
-        });
-      } else if (templateId) {
-        publishedForm = await prisma.publishedForm.findFirst({
-          where: {
-            shop: shop || undefined,
-            templateId: templateId,
-          },
-          orderBy: { createdAt: "desc" }
-        });
-      }
+      console.log("[Storefront API: matchedPublishedForm] Matched PublishedForm database record:", publishedForm ? { id: publishedForm.id, templateId: publishedForm.templateId } : "None (falling back to default template layout)");
 
       // Find the template definition to get fields, submitText, etc.
-      const matchedTemplateId = publishedForm ? publishedForm.templateId : templateId;
-      const template = FORM_TEMPLATES.find((t) => t.id === matchedTemplateId);
+      const template = FORM_TEMPLATES.find((t) => t.id === templateId);
 
       if (!publishedForm) {
         // Fallback: If no publishedForm exists in database yet for this template, 
         // return the default static template layout directly so it works instantly!
         if (template) {
+          console.log("[Storefront API] Serving default static template config for:", templateId);
           return new Response(
             JSON.stringify({
               id: `default-${template.id}`,
@@ -88,7 +72,7 @@ export const loader = async ({ request }) => {
         }
 
         return new Response(
-          JSON.stringify({ error: "Form not found", formId, pageId, templateId }),
+          JSON.stringify({ error: "Form template not found", templateId }),
           { status: 404, headers }
         );
       }
@@ -99,7 +83,7 @@ export const loader = async ({ request }) => {
           ? JSON.parse(publishedForm.configData)
           : {};
       } catch (e) {
-        console.error("Failed to parse configData for form", formId, e);
+        console.error("Failed to parse configData for templateId", templateId, e);
       }
 
       return new Response(

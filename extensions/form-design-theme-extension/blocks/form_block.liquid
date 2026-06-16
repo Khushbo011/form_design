@@ -1,6 +1,6 @@
 {{ 'form-design.css' | asset_url | stylesheet_tag }}
 
-{% if block.settings.form_id == blank %}
+{% if block.settings.selected_template == blank %}
   {%- comment -%} ── Empty State ── {%- endcomment -%}
   <div class="fd-empty-state">
     <span class="fd-empty-icon">📝</span>
@@ -15,7 +15,7 @@
   <div
     class="fd-form-container"
     id="fd-block-{{ block.id }}"
-    data-form-id="{{ block.settings.form_id }}"
+    data-selected-template="{{ block.settings.selected_template }}"
     data-app-url="{{ shop.url }}/apps/form-design"
     style="
       max-width: {{ block.settings.form_width }}%;
@@ -50,7 +50,10 @@
   <script>
     (function() {
       var BLOCK_ID = {{ block.id | json }};
-      var FORM_ID = {{ block.settings.form_id | json }};
+      var SELECTED_TEMPLATE = {{ block.settings.selected_template | json }};
+
+      console.log("[Theme Block Selection: selectedTemplate] Block ID:", BLOCK_ID, "selectedTemplate:", SELECTED_TEMPLATE);
+      console.log("[Liquid: selectedTemplate] Evaluated Liquid setting:", SELECTED_TEMPLATE);
 
       /* ── Theme Editor override settings ── */
       var overrides = {
@@ -67,11 +70,16 @@
       var loadingEl = document.getElementById('fd-loading-' + BLOCK_ID);
       var rootEl = document.getElementById('fd-root-' + BLOCK_ID);
 
-      if (!container || !FORM_ID) return;
+      if (!container || !SELECTED_TEMPLATE) {
+        console.warn("[Form Design] Rendering aborted. Container or SELECTED_TEMPLATE is missing.", { container: container, selectedTemplate: SELECTED_TEMPLATE });
+        return;
+      }
 
       /* ── Build the App Proxy URL ── */
       var proxyBase = container.getAttribute('data-app-url');
-      var apiUrl = proxyBase + '/forms?shop=' + encodeURIComponent({{ shop.permanent_domain | json }}) + '&templateId=' + encodeURIComponent(FORM_ID);
+      var apiUrl = proxyBase + '?shop=' + encodeURIComponent({{ shop.permanent_domain | json }}) + '&templateId=' + encodeURIComponent(SELECTED_TEMPLATE);
+
+      console.log("[Form Design] Storefront fetch request URL:", apiUrl);
 
       /* ── Fetch form data ── */
       fetch(apiUrl)
@@ -80,15 +88,17 @@
           return res.json();
         })
         .then(function(data) {
+          console.log("[Form Design: API Response] Data received:", data);
           if (data.error) {
             showError(data.error);
             return;
           }
+          console.log("[Frontend: renderedForm] Starting render for:", SELECTED_TEMPLATE, "config:", data.design);
           renderForm(data);
         })
         .catch(function(err) {
-          console.error('[Form Design] Failed to load form:', err);
-          showError('Unable to load this form. Please check the Form ID and try again.');
+          console.error('[Form Design] Failed to load form template:', SELECTED_TEMPLATE, err);
+          showError('Unable to load this form. Please check the template settings and try again.');
         });
 
       /* ═══════════════════════════════════════════════════════════════════
@@ -281,7 +291,7 @@
   "settings": [
     {
       "type": "select",
-      "id": "form_id",
+      "id": "selected_template",
       "label": "Select Form Template",
       "info": "Select the form template you want to display on your storefront.",
       "options": [
