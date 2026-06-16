@@ -39,6 +39,54 @@ export const loader = async ({ request }) => {
   try {
     // ── Single form lookup by Template ID ────────────────────────────────
     if (templateId) {
+      // Get the shop's active subscription plan
+      const subscription = await prisma.storeSubscription.findUnique({
+        where: { shop: shop || "" },
+      });
+      const currentPlan = subscription?.plan || "free";
+
+      console.log("[Storefront API: Current merchant plan] Shop:", shop, "Plan:", currentPlan);
+
+      // Find the template definition to get fields, submitText, etc.
+      const template = FORM_TEMPLATES.find((t) => t.id === templateId);
+
+      // Available templates based on plan
+      const availableTemplates = FORM_TEMPLATES.filter((t) => {
+        if (currentPlan === "pro") return true;
+        if (currentPlan === "starter") return t.type === "free" || t.type === "starter";
+        return t.type === "free";
+      }).map((t) => t.id);
+
+      console.log("[Storefront API: Available templates] Plan:", currentPlan, "Templates:", availableTemplates);
+      console.log("[Storefront API: Selected template] Requested templateId:", templateId);
+
+      // Entitlement check
+      let isAllowed = false;
+      if (template) {
+        if (template.type === "free") {
+          isAllowed = true;
+        } else if (template.type === "starter") {
+          isAllowed = (currentPlan === "starter" || currentPlan === "pro");
+        } else if (template.type === "pro") {
+          isAllowed = (currentPlan === "pro");
+        }
+      }
+
+      console.log("[Storefront API: Rendering decision] Allowed:", isAllowed, "Reason:", !template ? "Template not found" : `Template type is "${template.type}", shop plan is "${currentPlan}"`);
+
+      if (!isAllowed) {
+        return new Response(
+          JSON.stringify({ 
+            error: "Plan Restriction",
+            message: `The selected template (${template ? template.name : templateId}) is only available on the ${template ? template.type.toUpperCase() : 'Premium'} subscription. Please upgrade your plan in the Form Design app.`,
+            isPlanRestricted: true,
+            currentPlan: currentPlan,
+            requiredPlan: template ? template.type : "starter"
+          }),
+          { status: 403, headers }
+        );
+      }
+
       const publishedForm = await prisma.publishedForm.findFirst({
         where: {
           shop: shop || undefined,
@@ -48,9 +96,6 @@ export const loader = async ({ request }) => {
       });
 
       console.log("[Storefront API: matchedPublishedForm] Matched PublishedForm database record:", publishedForm ? { id: publishedForm.id, templateId: publishedForm.templateId } : "None (falling back to default template layout)");
-
-      // Find the template definition to get fields, submitText, etc.
-      const template = FORM_TEMPLATES.find((t) => t.id === templateId);
 
       if (!publishedForm) {
         // Fallback: If no publishedForm exists in database yet for this template, 

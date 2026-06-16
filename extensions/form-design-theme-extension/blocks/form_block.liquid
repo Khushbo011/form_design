@@ -1,6 +1,25 @@
 {{ 'form-design.css' | asset_url | stylesheet_tag }}
 
-{% if block.settings.selected_template == blank %}
+{% assign show_block = false %}
+{% if block.settings.page_visibility == blank or block.settings.page_visibility == 'all' %}
+  {% assign show_block = true %}
+{% elsif block.settings.page_visibility == 'index' and request.page_type == 'index' %}
+  {% assign show_block = true %}
+{% elsif block.settings.page_visibility == 'product' and request.page_type == 'product' %}
+  {% assign show_block = true %}
+{% elsif block.settings.page_visibility == 'collection' and request.page_type == 'collection' or request.page_type == 'list-collections' %}
+  {% assign show_block = true %}
+{% elsif block.settings.page_visibility == 'page' and request.page_type == 'page' %}
+  {% assign show_block = true %}
+{% endif %}
+
+{% if show_block == false %}
+  {%- comment -%} Print logging decision to console for debugging page rendering restrictions {%- endcomment -%}
+  <script>
+    console.log("[Form Design: Rendering Decision] Block hidden due to Page Visibility restriction. Visibility Setting:", {{ block.settings.page_visibility | json }}, "Current Page Type:", {{ request.page_type | json }});
+    console.log("[Liquid: pageContext] Current page type:", {{ request.page_type | json }}, "Current template:", {{ template | json }});
+  </script>
+{% elsif block.settings.selected_template == blank %}
   {%- comment -%} ── Empty State ── {%- endcomment -%}
   <div class="fd-empty-state">
     <span class="fd-empty-icon">📝</span>
@@ -10,6 +29,9 @@
       Open the Form Design app to create and publish forms.
     </p>
   </div>
+  <script>
+    console.log("[Form Design: Rendering Decision] Block empty because selected_template is blank.");
+  </script>
 {% else %}
   {%- comment -%} ── Form Container ── {%- endcomment -%}
   <div
@@ -51,9 +73,14 @@
     (function() {
       var BLOCK_ID = {{ block.id | json }};
       var SELECTED_TEMPLATE = {{ block.settings.selected_template | json }};
+      var PAGE_TYPE = {{ request.page_type | json }};
+      var TEMPLATE = {{ template | json }};
+      var VISIBILITY = {{ block.settings.page_visibility | json }};
 
       console.log("[Theme Block Selection: selectedTemplate] Block ID:", BLOCK_ID, "selectedTemplate:", SELECTED_TEMPLATE);
       console.log("[Liquid: selectedTemplate] Evaluated Liquid setting:", SELECTED_TEMPLATE);
+      console.log("[Liquid: pageContext] Current page type:", PAGE_TYPE, "Current templateName:", TEMPLATE);
+      console.log("[Form Design: Rendering Decision] Block shown. Visibility setting is:", VISIBILITY);
 
       /* ── Theme Editor override settings ── */
       var overrides = {
@@ -84,6 +111,11 @@
       /* ── Fetch form data ── */
       fetch(apiUrl)
         .then(function(res) {
+          if (res.status === 403) {
+            return res.json().then(function(errData) {
+              throw { isPlanRestricted: true, message: errData.message };
+            });
+          }
           if (!res.ok) throw new Error('HTTP ' + res.status);
           return res.json();
         })
@@ -98,7 +130,11 @@
         })
         .catch(function(err) {
           console.error('[Form Design] Failed to load form template:', SELECTED_TEMPLATE, err);
-          showError('Unable to load this form. Please check the template settings and try again.');
+          if (err.isPlanRestricted) {
+            showPlanUpgradeMessage(err.message);
+          } else {
+            showError('Unable to load this form. Please check the template settings and try again.');
+          }
         });
 
       /* ═══════════════════════════════════════════════════════════════════
@@ -264,6 +300,16 @@
         rootEl.style.display = 'block';
       }
 
+      function showPlanUpgradeMessage(message) {
+        loadingEl.style.display = 'none';
+        rootEl.innerHTML = '<div class="fd-plan-restriction-state" style="padding: 24px; border: 2px dashed #f59e0b; border-radius: 8px; background: #fffbeb; color: #b45309; text-align: center; font-family: sans-serif;">' +
+          '<span style="font-size: 32px; display: block; margin-bottom: 12px;">⚠️</span>' +
+          '<h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: #92400e;">Plan Upgrade Required</h3>' +
+          '<p style="margin: 0; font-size: 14px; line-height: 1.5; color: #b45309;">' + escapeHtml(message) + '</p>' +
+          '</div>';
+        rootEl.style.display = 'block';
+      }
+
       /* ── Utility: HTML escape ── */
       function escapeHtml(str) {
         if (!str) return '';
@@ -289,6 +335,20 @@
   "name": "Form Design",
   "target": "section",
   "settings": [
+    {
+      "type": "select",
+      "id": "page_visibility",
+      "label": "Page Visibility",
+      "info": "Choose where this form block should render on your store.",
+      "options": [
+        { "value": "all", "label": "All Pages" },
+        { "value": "index", "label": "Home Page Only" },
+        { "value": "product", "label": "Product Pages Only" },
+        { "value": "collection", "label": "Collection Pages Only" },
+        { "value": "page", "label": "Standard Pages Only" }
+      ],
+      "default": "all"
+    },
     {
       "type": "select",
       "id": "selected_template",
