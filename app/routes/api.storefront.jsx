@@ -20,6 +20,7 @@ export const loader = async ({ request }) => {
   const shop = url.searchParams.get("shop");
   const formId = url.searchParams.get("formId");
   const pageId = url.searchParams.get("pageId");
+  const templateId = url.searchParams.get("templateId");
 
   // CORS headers for storefront access
   const headers = {
@@ -35,8 +36,8 @@ export const loader = async ({ request }) => {
   }
 
   try {
-    // ── Single form lookup by UUID or Page ID ────────────────────────────
-    if (formId || pageId) {
+    // ── Single form lookup by UUID, Page ID, or Template ID ──────────────
+    if (formId || pageId || templateId) {
       let publishedForm = null;
       if (formId) {
         publishedForm = await prisma.publishedForm.findUnique({
@@ -54,11 +55,40 @@ export const loader = async ({ request }) => {
             pageId: normalizedPageId 
           },
         });
+      } else if (templateId) {
+        publishedForm = await prisma.publishedForm.findFirst({
+          where: {
+            shop: shop || undefined,
+            templateId: templateId,
+          },
+          orderBy: { createdAt: "desc" }
+        });
       }
 
+      // Find the template definition to get fields, submitText, etc.
+      const matchedTemplateId = publishedForm ? publishedForm.templateId : templateId;
+      const template = FORM_TEMPLATES.find((t) => t.id === matchedTemplateId);
+
       if (!publishedForm) {
+        // Fallback: If no publishedForm exists in database yet for this template, 
+        // return the default static template layout directly so it works instantly!
+        if (template) {
+          return new Response(
+            JSON.stringify({
+              id: `default-${template.id}`,
+              templateId: template.id,
+              templateName: template.name,
+              fields: template.fields || [],
+              submitText: template.submitText || "Submit",
+              successMessage: template.successMessage || "Form submitted successfully!",
+              design: {},
+            }),
+            { status: 200, headers }
+          );
+        }
+
         return new Response(
-          JSON.stringify({ error: "Form not found", formId, pageId }),
+          JSON.stringify({ error: "Form not found", formId, pageId, templateId }),
           { status: 404, headers }
         );
       }
