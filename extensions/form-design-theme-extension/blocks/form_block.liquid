@@ -1,13 +1,13 @@
 {{ 'form-design.css' | asset_url | stylesheet_tag }}
 
-{% if block.settings.form_id == blank %}
+{% if block.settings.form_page == blank and block.settings.form_id == blank %}
   {%- comment -%} ── Empty State ── {%- endcomment -%}
   <div class="fd-empty-state">
     <span class="fd-empty-icon">📝</span>
     <p>
       <strong>No form selected.</strong><br>
-      Please select a form from the Theme Editor.<br>
-      Open the Form Design app to create and publish forms, then paste the Form ID here.
+      Please select a form page from the Theme Editor dropdown.<br>
+      Open the Form Design app to create and publish forms.
     </p>
   </div>
 {% else %}
@@ -16,6 +16,7 @@
     class="fd-form-container"
     id="fd-block-{{ block.id }}"
     data-form-id="{{ block.settings.form_id }}"
+    data-form-page-id="{{ block.settings.form_page.id }}"
     data-app-url="{{ shop.url }}/apps/form-design"
     style="
       max-width: {{ block.settings.form_width }}%;
@@ -51,6 +52,7 @@
     (function() {
       var BLOCK_ID = {{ block.id | json }};
       var FORM_ID = {{ block.settings.form_id | json }};
+      var PAGE_ID = {{ block.settings.form_page.id | json }};
 
       /* ── Theme Editor override settings ── */
       var overrides = {
@@ -67,11 +69,17 @@
       var loadingEl = document.getElementById('fd-loading-' + BLOCK_ID);
       var rootEl = document.getElementById('fd-root-' + BLOCK_ID);
 
-      if (!container || !FORM_ID) return;
+      if (!container) return;
+      if (!FORM_ID && !PAGE_ID) return;
 
       /* ── Build the App Proxy URL ── */
       var proxyBase = container.getAttribute('data-app-url');
-      var apiUrl = proxyBase + '/forms?formId=' + encodeURIComponent(FORM_ID);
+      var apiUrl = proxyBase + '/forms?shop=' + encodeURIComponent({{ shop.permanent_domain | json }});
+      if (PAGE_ID) {
+        apiUrl += '&pageId=' + encodeURIComponent(PAGE_ID);
+      } else {
+        apiUrl += '&formId=' + encodeURIComponent(FORM_ID);
+      }
 
       /* ── Fetch form data ── */
       fetch(apiUrl)
@@ -280,10 +288,16 @@
   "target": "section",
   "settings": [
     {
+      "type": "page",
+      "id": "form_page",
+      "label": "Select Form Page",
+      "info": "Choose the page created by the Form Design app for your form."
+    },
+    {
       "type": "text",
       "id": "form_id",
-      "label": "Form ID",
-      "info": "Paste the Form ID from your Form Design app. Find it under your published forms list."
+      "label": "Form ID (Deprecated/Legacy)",
+      "info": "For backward compatibility. Paste the Form ID from your Form Design app if not using the dropdown."
     },
     {
       "type": "range",

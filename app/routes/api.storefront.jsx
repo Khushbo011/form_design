@@ -19,6 +19,7 @@ export const loader = async ({ request }) => {
   const url = new URL(request.url);
   const shop = url.searchParams.get("shop");
   const formId = url.searchParams.get("formId");
+  const pageId = url.searchParams.get("pageId");
 
   // CORS headers for storefront access
   const headers = {
@@ -34,15 +35,30 @@ export const loader = async ({ request }) => {
   }
 
   try {
-    // ── Single form lookup by UUID ──────────────────────────────────────
-    if (formId) {
-      const publishedForm = await prisma.publishedForm.findUnique({
-        where: { id: formId },
-      });
+    // ── Single form lookup by UUID or Page ID ────────────────────────────
+    if (formId || pageId) {
+      let publishedForm = null;
+      if (formId) {
+        publishedForm = await prisma.publishedForm.findUnique({
+          where: { id: formId },
+        });
+      } else if (pageId) {
+        // Normalize pageId to be the gid format
+        const normalizedPageId = pageId.startsWith("gid://") 
+          ? pageId 
+          : `gid://shopify/Page/${pageId}`;
+
+        publishedForm = await prisma.publishedForm.findFirst({
+          where: { 
+            shop: shop || undefined,
+            pageId: normalizedPageId 
+          },
+        });
+      }
 
       if (!publishedForm) {
         return new Response(
-          JSON.stringify({ error: "Form not found", formId }),
+          JSON.stringify({ error: "Form not found", formId, pageId }),
           { status: 404, headers }
         );
       }
