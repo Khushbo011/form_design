@@ -93,11 +93,6 @@ export const loader = async ({ request }) => {
         );
       }
 
-      // Find the template definition to get fields, submitText, etc.
-      const template = FORM_TEMPLATES.find(
-        (t) => t.id === publishedForm.templateId
-      );
-
       let design = {};
       try {
         design = publishedForm.configData
