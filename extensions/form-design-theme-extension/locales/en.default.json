@@ -1,10 +1,25 @@
 {
-  "ratings": {
-    "stars": {
-      "label": "Ratings"
+  "form_design": {
+    "block": {
+      "name": "Form Design",
+      "description": "Embed a form from the Form Design app on your storefront."
     },
-    "home": {
-      "recommendationText": "Recommended Product!"
-    }
+    "settings": {
+      "form_id": "Form ID",
+      "form_width": "Form Width",
+      "form_alignment": "Form Alignment",
+      "background_color": "Background Color",
+      "text_color": "Text Color",
+      "label_color": "Label Color",
+      "button_background": "Button Background",
+      "button_text_color": "Button Text Color",
+      "border_radius": "Border Radius",
+      "padding": "Padding",
+      "custom_css": "Custom CSS"
+    },
+    "empty_state": "No form selected. Please select a form from the Theme Editor.",
+    "loading": "Loading form…",
+    "error": "Unable to load this form. Please check the Form ID and try again.",
+    "success": "Submitted Successfully!"
   }
 }

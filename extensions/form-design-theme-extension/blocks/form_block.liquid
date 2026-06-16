@@ -1,65 +1,276 @@
+{{ 'form-design.css' | asset_url | stylesheet_tag }}
+
 {% if block.settings.form_id == blank %}
-  <div class="form-design-empty-state" style="padding: 20px; border: 1px dashed #ccc; text-align: center; background: #f9f9f9;">
-    <p>No form selected. Please select a form from the Theme Editor.</p>
+  {%- comment -%} ── Empty State ── {%- endcomment -%}
+  <div class="fd-empty-state">
+    <span class="fd-empty-icon">📝</span>
+    <p>
+      <strong>No form selected.</strong><br>
+      Please select a form from the Theme Editor.<br>
+      Open the Form Design app to create and publish forms, then paste the Form ID here.
+    </p>
   </div>
 {% else %}
-  <div class="form-design-container"
-       id="form-design-{{ block.id }}"
-       data-form-id="{{ block.settings.form_id }}"
-       style="
-         --fd-width: {{ block.settings.form_width }}%;
-         --fd-alignment: {% if block.settings.form_alignment == 'center' %}0 auto{% elsif block.settings.form_alignment == 'right' %}0 0 0 auto{% else %}0 auto 0 0{% endif %};
-         --fd-bg-color: {{ block.settings.background_color }};
-         --fd-text-color: {{ block.settings.text_color }};
-         --fd-label-color: {{ block.settings.label_color }};
-         --fd-btn-bg: {{ block.settings.button_background }};
-         --fd-btn-text: {{ block.settings.button_text_color }};
-         --fd-border-radius: {{ block.settings.border_radius }}px;
-         --fd-padding: {{ block.settings.padding }}px;
-         max-width: var(--fd-width);
-         margin: var(--fd-alignment);
-         background-color: var(--fd-bg-color);
-         color: var(--fd-text-color);
-         border-radius: var(--fd-border-radius);
-         padding: var(--fd-padding);
-       ">
-    
-    <!-- The Form Design JS will target this container to inject the form -->
-    <div class="form-design-root"></div>
-    
-    {% if block.settings.custom_css != blank %}
-      <style>
-        #form-design-{{ block.id }} {
-          {{ block.settings.custom_css }}
-        }
-      </style>
-    {% endif %}
+  {%- comment -%} ── Form Container ── {%- endcomment -%}
+  <div
+    class="fd-form-container"
+    id="fd-block-{{ block.id }}"
+    data-form-id="{{ block.settings.form_id }}"
+    data-app-url="{{ shop.url }}/apps/form-design"
+    style="
+      max-width: {{ block.settings.form_width }}%;
+      {% if block.settings.form_alignment == 'center' %}
+        margin-left: auto; margin-right: auto;
+      {% elsif block.settings.form_alignment == 'right' %}
+        margin-left: auto; margin-right: 0;
+      {% else %}
+        margin-left: 0; margin-right: auto;
+      {% endif %}
+    "
+  >
+    {%- comment -%} Loading state shown until JS fetches the form {%- endcomment -%}
+    <div class="fd-loading" id="fd-loading-{{ block.id }}">
+      <div class="fd-spinner"></div>
+      <span class="fd-loading-text">Loading form…</span>
+    </div>
+
+    {%- comment -%} JS will inject the rendered form here {%- endcomment -%}
+    <div class="fd-form-root" id="fd-root-{{ block.id }}" style="display:none;"></div>
   </div>
 
-  <script>
-    // Example fetch logic to render form dynamically
-    document.addEventListener("DOMContentLoaded", function() {
-      const container = document.getElementById('form-design-{{ block.id }}');
-      const formId = container.getAttribute('data-form-id');
-      
-      if (formId) {
-        // Fetch from the application's published forms endpoint
-        // Replace with actual API endpoint
-        fetch(`https://your-app-domain.com/api/forms/${formId}`)
-          .then(res => res.json())
-          .then(data => {
-            if(data && data.html) {
-              container.querySelector('.form-design-root').innerHTML = data.html;
-            } else {
-              container.querySelector('.form-design-root').innerHTML = '<p>Form loaded successfully.</p>';
-            }
-          })
-          .catch(err => {
-            console.error('Error loading form:', err);
-            container.querySelector('.form-design-root').innerHTML = '<p>Error loading form. Please try again later.</p>';
-          });
+  {%- comment -%} ── Custom CSS override ── {%- endcomment -%}
+  {% if block.settings.custom_css != blank %}
+    <style>
+      #fd-block-{{ block.id }} {
+        {{ block.settings.custom_css }}
       }
-    });
+    </style>
+  {% endif %}
+
+  <script>
+    (function() {
+      var BLOCK_ID = {{ block.id | json }};
+      var FORM_ID = {{ block.settings.form_id | json }};
+
+      /* ── Theme Editor override settings ── */
+      var overrides = {
+        bgColor: {{ block.settings.background_color | json }},
+        textColor: {{ block.settings.text_color | json }},
+        labelColor: {{ block.settings.label_color | json }},
+        btnBg: {{ block.settings.button_background | json }},
+        btnText: {{ block.settings.button_text_color | json }},
+        borderRadius: {{ block.settings.border_radius | json }},
+        padding: {{ block.settings.padding | json }}
+      };
+
+      var container = document.getElementById('fd-block-' + BLOCK_ID);
+      var loadingEl = document.getElementById('fd-loading-' + BLOCK_ID);
+      var rootEl = document.getElementById('fd-root-' + BLOCK_ID);
+
+      if (!container || !FORM_ID) return;
+
+      /* ── Build the App Proxy URL ── */
+      var proxyBase = container.getAttribute('data-app-url');
+      var apiUrl = proxyBase + '/forms?formId=' + encodeURIComponent(FORM_ID);
+
+      /* ── Fetch form data ── */
+      fetch(apiUrl)
+        .then(function(res) {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.json();
+        })
+        .then(function(data) {
+          if (data.error) {
+            showError(data.error);
+            return;
+          }
+          renderForm(data);
+        })
+        .catch(function(err) {
+          console.error('[Form Design] Failed to load form:', err);
+          showError('Unable to load this form. Please check the Form ID and try again.');
+        });
+
+      /* ═══════════════════════════════════════════════════════════════════
+         Render the complete form from API data
+         ═══════════════════════════════════════════════════════════════════ */
+      function renderForm(data) {
+        var d = data.design || {};
+        var fields = data.fields || [];
+
+        /* Merge: saved design values, then Theme Editor overrides on top */
+        var bg = overrides.bgColor || d.formBg || '#ffffff';
+        var textColor = overrides.textColor || d.formTextColor || '#202223';
+        var labelColor = overrides.labelColor || d.labelColor || '#475569';
+        var btnBg = overrides.btnBg || d.buttonBg || '#6366f1';
+        var btnText = overrides.btnText || d.buttonTextColor || '#ffffff';
+        var borderRadius = overrides.borderRadius != null ? overrides.borderRadius : (d.formBorderRadius != null ? d.formBorderRadius : 12);
+        var padding = overrides.padding != null ? overrides.padding : (d.formPadding != null ? d.formPadding : 32);
+
+        var inputBg = d.inputBg || '#ffffff';
+        var inputBorder = d.inputBorderColor || '#cbd5e1';
+        var inputText = d.inputTextColor || '#334155';
+        var inputRadius = d.inputBorderRadius != null ? d.inputBorderRadius : 6;
+        var placeholderColor = d.placeholderColor || '#94a3b8';
+        var fontFamily = d.fontFamily || 'inherit';
+        var fontSize = d.fontSize || 14;
+        var labelFontSize = d.labelFontSize || 13;
+        var labelFontWeight = d.labelFontWeight || '600';
+        var fieldSpacing = d.fieldSpacing || 16;
+        var btnRadius = d.buttonBorderRadius != null ? d.buttonBorderRadius : 8;
+        var btnPadding = d.buttonPadding || 12;
+        var borderWidth = d.formBorderWidth || 0;
+        var borderColor = d.formBorderColor || '#e2e8f0';
+
+        /* Load Google Font if needed */
+        if (fontFamily && fontFamily !== 'inherit' && fontFamily !== 'Inter') {
+          var linkId = 'fd-gfont-' + fontFamily.replace(/\s+/g, '-');
+          if (!document.getElementById(linkId)) {
+            var link = document.createElement('link');
+            link.id = linkId;
+            link.rel = 'stylesheet';
+            link.href = 'https://fonts.googleapis.com/css2?family=' +
+              encodeURIComponent(fontFamily) + ':wght@400;500;600;700&display=swap';
+            document.head.appendChild(link);
+          }
+        }
+
+        /* Apply container styles */
+        container.style.backgroundColor = bg;
+        container.style.color = textColor;
+        container.style.borderRadius = borderRadius + 'px';
+        container.style.padding = padding + 'px';
+        container.style.fontFamily = fontFamily !== 'inherit' ? ("'" + fontFamily + "', sans-serif") : 'inherit';
+        container.style.fontSize = fontSize + 'px';
+        if (borderWidth > 0) {
+          container.style.border = borderWidth + 'px solid ' + borderColor;
+        }
+
+        /* Build form HTML */
+        var html = '';
+        html += '<h2 class="fd-form-title" style="font-size:' + (fontSize + 6) + 'px; color:' + textColor + ';">' + escapeHtml(data.templateName) + '</h2>';
+
+        html += '<form id="fd-form-' + BLOCK_ID + '" novalidate>';
+
+        fields.forEach(function(field, i) {
+          var fieldId = 'fd-' + BLOCK_ID + '-' + field.id;
+          var req = field.required ? ' required' : '';
+          var reqStar = field.required ? '<span class="fd-required-star">*</span>' : '';
+          var spacing = 'margin-bottom:' + fieldSpacing + 'px;';
+
+          if (field.type === 'checkbox') {
+            html += '<div class="fd-checkbox-group" style="' + spacing + '">';
+            html += '<input type="checkbox" id="' + fieldId + '" name="' + field.id + '"' + req + '>';
+            html += '<label for="' + fieldId + '" style="color:' + labelColor + '; font-size:' + labelFontSize + 'px; font-weight:' + labelFontWeight + ';">' + escapeHtml(field.label) + reqStar + '</label>';
+            html += '</div>';
+          } else if (field.type === 'textarea') {
+            html += '<div class="fd-form-group" style="' + spacing + '">';
+            html += '<label for="' + fieldId + '" style="color:' + labelColor + '; font-size:' + labelFontSize + 'px; font-weight:' + labelFontWeight + ';">' + escapeHtml(field.label) + reqStar + '</label>';
+            html += '<textarea id="' + fieldId + '" name="' + field.id + '" rows="4" placeholder="' + escapeAttr(field.placeholder || '') + '"' + req;
+            html += ' style="background:' + inputBg + '; border-color:' + inputBorder + '; color:' + inputText + '; border-radius:' + inputRadius + 'px;"';
+            html += '></textarea>';
+            html += '</div>';
+          } else if (field.type === 'select') {
+            html += '<div class="fd-form-group" style="' + spacing + '">';
+            html += '<label for="' + fieldId + '" style="color:' + labelColor + '; font-size:' + labelFontSize + 'px; font-weight:' + labelFontWeight + ';">' + escapeHtml(field.label) + reqStar + '</label>';
+            html += '<select id="' + fieldId + '" name="' + field.id + '"' + req;
+            html += ' style="background:' + inputBg + '; border-color:' + inputBorder + '; color:' + inputText + '; border-radius:' + inputRadius + 'px;">';
+            (field.options || []).forEach(function(opt) {
+              html += '<option value="' + escapeAttr(opt) + '">' + escapeHtml(opt) + '</option>';
+            });
+            html += '</select>';
+            html += '</div>';
+          } else {
+            html += '<div class="fd-form-group" style="' + spacing + '">';
+            html += '<label for="' + fieldId + '" style="color:' + labelColor + '; font-size:' + labelFontSize + 'px; font-weight:' + labelFontWeight + ';">' + escapeHtml(field.label) + reqStar + '</label>';
+            html += '<input type="' + (field.type || 'text') + '" id="' + fieldId + '" name="' + field.id + '" placeholder="' + escapeAttr(field.placeholder || '') + '"' + req;
+            html += ' style="background:' + inputBg + '; border-color:' + inputBorder + '; color:' + inputText + '; border-radius:' + inputRadius + 'px;">';
+            if (field.helpText) {
+              html += '<div class="fd-help-text">' + escapeHtml(field.helpText) + '</div>';
+            }
+            html += '</div>';
+          }
+        });
+
+        html += '<button type="submit" class="fd-submit-btn" style="';
+        html += 'background-color:' + btnBg + '; color:' + btnText + '; ';
+        html += 'border-radius:' + btnRadius + 'px; padding:' + btnPadding + 'px 24px; ';
+        html += 'margin-top: 8px;';
+        html += '">' + escapeHtml(data.submitText || 'Submit') + '</button>';
+
+        html += '</form>';
+
+        /* Placeholder color override via scoped style */
+        html += '<style>';
+        html += '#fd-block-' + BLOCK_ID + ' input::placeholder, ';
+        html += '#fd-block-' + BLOCK_ID + ' textarea::placeholder { ';
+        html += 'color: ' + placeholderColor + ' !important; opacity: 1; }';
+        html += '</style>';
+
+        /* Inject into DOM */
+        loadingEl.style.display = 'none';
+        rootEl.innerHTML = html;
+        rootEl.style.display = 'block';
+
+        /* Attach submit handler */
+        var formEl = document.getElementById('fd-form-' + BLOCK_ID);
+        if (formEl) {
+          formEl.addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleSubmit(formEl, data);
+          });
+        }
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════
+         Form Submission
+         ═══════════════════════════════════════════════════════════════════ */
+      function handleSubmit(formEl, data) {
+        /* Collect form data */
+        var formData = new FormData(formEl);
+        var payload = {};
+        formData.forEach(function(value, key) { payload[key] = value; });
+
+        /* Show success message */
+        var successMsg = data.successMessage || 'Thank you! Your form has been submitted.';
+        rootEl.innerHTML = '<div class="fd-success-message">' +
+          '<span class="fd-success-icon">✅</span>' +
+          '<h3>Submitted Successfully!</h3>' +
+          '<p>' + escapeHtml(successMsg) + '</p>' +
+          '<button type="button" onclick="location.reload()">Submit Another Response</button>' +
+          '</div>';
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════
+         Error State
+         ═══════════════════════════════════════════════════════════════════ */
+      function showError(message) {
+        loadingEl.style.display = 'none';
+        rootEl.innerHTML = '<div class="fd-error-state">' +
+          '<span class="fd-error-icon">⚠️</span>' +
+          '<p>' + escapeHtml(message) + '</p>' +
+          '<button type="button" onclick="location.reload()">Retry</button>' +
+          '</div>';
+        rootEl.style.display = 'block';
+      }
+
+      /* ── Utility: HTML escape ── */
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function escapeAttr(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/"/g, '&quot;');
+      }
+    })();
   </script>
 {% endif %}
 
@@ -72,14 +283,14 @@
       "type": "text",
       "id": "form_id",
       "label": "Form ID",
-      "info": "Enter the Form ID from your Form Design app."
+      "info": "Paste the Form ID from your Form Design app. Find it under your published forms list."
     },
     {
       "type": "range",
       "id": "form_width",
-      "min": 10,
+      "min": 30,
       "max": 100,
-      "step": 1,
+      "step": 5,
       "unit": "%",
       "label": "Form Width",
       "default": 100
@@ -99,31 +310,31 @@
       "type": "color",
       "id": "background_color",
       "label": "Background Color",
-      "default": "#ffffff"
+      "info": "Leave empty to use the form's saved design."
     },
     {
       "type": "color",
       "id": "text_color",
       "label": "Text Color",
-      "default": "#000000"
+      "info": "Leave empty to use the form's saved design."
     },
     {
       "type": "color",
       "id": "label_color",
       "label": "Label Color",
-      "default": "#333333"
+      "info": "Leave empty to use the form's saved design."
     },
     {
       "type": "color",
       "id": "button_background",
       "label": "Button Background",
-      "default": "#000000"
+      "info": "Leave empty to use the form's saved design."
     },
     {
       "type": "color",
       "id": "button_text_color",
       "label": "Button Text Color",
-      "default": "#ffffff"
+      "info": "Leave empty to use the form's saved design."
     },
     {
       "type": "range",
@@ -133,7 +344,7 @@
       "step": 1,
       "unit": "px",
       "label": "Border Radius",
-      "default": 8
+      "default": 12
     },
     {
       "type": "range",
@@ -143,13 +354,13 @@
       "step": 2,
       "unit": "px",
       "label": "Padding",
-      "default": 20
+      "default": 32
     },
     {
       "type": "textarea",
       "id": "custom_css",
       "label": "Custom CSS",
-      "info": "Add custom CSS specifically for this form block."
+      "info": "Add custom CSS scoped to this form block instance."
     }
   ]
 }
