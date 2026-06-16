@@ -1,0 +1,156 @@
+{% if block.settings.form_id == blank %}
+  <div class="form-design-empty-state" style="padding: 20px; border: 1px dashed #ccc; text-align: center; background: #f9f9f9;">
+    <p>No form selected. Please select a form from the Theme Editor.</p>
+  </div>
+{% else %}
+  <div class="form-design-container"
+       id="form-design-{{ block.id }}"
+       data-form-id="{{ block.settings.form_id }}"
+       style="
+         --fd-width: {{ block.settings.form_width }}%;
+         --fd-alignment: {% if block.settings.form_alignment == 'center' %}0 auto{% elsif block.settings.form_alignment == 'right' %}0 0 0 auto{% else %}0 auto 0 0{% endif %};
+         --fd-bg-color: {{ block.settings.background_color }};
+         --fd-text-color: {{ block.settings.text_color }};
+         --fd-label-color: {{ block.settings.label_color }};
+         --fd-btn-bg: {{ block.settings.button_background }};
+         --fd-btn-text: {{ block.settings.button_text_color }};
+         --fd-border-radius: {{ block.settings.border_radius }}px;
+         --fd-padding: {{ block.settings.padding }}px;
+         max-width: var(--fd-width);
+         margin: var(--fd-alignment);
+         background-color: var(--fd-bg-color);
+         color: var(--fd-text-color);
+         border-radius: var(--fd-border-radius);
+         padding: var(--fd-padding);
+       ">
+    
+    <!-- The Form Design JS will target this container to inject the form -->
+    <div class="form-design-root"></div>
+    
+    {% if block.settings.custom_css != blank %}
+      <style>
+        #form-design-{{ block.id }} {
+          {{ block.settings.custom_css }}
+        }
+      </style>
+    {% endif %}
+  </div>
+
+  <script>
+    // Example fetch logic to render form dynamically
+    document.addEventListener("DOMContentLoaded", function() {
+      const container = document.getElementById('form-design-{{ block.id }}');
+      const formId = container.getAttribute('data-form-id');
+      
+      if (formId) {
+        // Fetch from the application's published forms endpoint
+        // Replace with actual API endpoint
+        fetch(`https://your-app-domain.com/api/forms/${formId}`)
+          .then(res => res.json())
+          .then(data => {
+            if(data && data.html) {
+              container.querySelector('.form-design-root').innerHTML = data.html;
+            } else {
+              container.querySelector('.form-design-root').innerHTML = '<p>Form loaded successfully.</p>';
+            }
+          })
+          .catch(err => {
+            console.error('Error loading form:', err);
+            container.querySelector('.form-design-root').innerHTML = '<p>Error loading form. Please try again later.</p>';
+          });
+      }
+    });
+  </script>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Form Design",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "form_id",
+      "label": "Form ID",
+      "info": "Enter the Form ID from your Form Design app."
+    },
+    {
+      "type": "range",
+      "id": "form_width",
+      "min": 10,
+      "max": 100,
+      "step": 1,
+      "unit": "%",
+      "label": "Form Width",
+      "default": 100
+    },
+    {
+      "type": "select",
+      "id": "form_alignment",
+      "label": "Form Alignment",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "center", "label": "Center" },
+        { "value": "right", "label": "Right" }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background Color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text Color",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "label_color",
+      "label": "Label Color",
+      "default": "#333333"
+    },
+    {
+      "type": "color",
+      "id": "button_background",
+      "label": "Button Background",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "button_text_color",
+      "label": "Button Text Color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "min": 0,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "label": "Border Radius",
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "padding",
+      "min": 0,
+      "max": 60,
+      "step": 2,
+      "unit": "px",
+      "label": "Padding",
+      "default": 20
+    },
+    {
+      "type": "textarea",
+      "id": "custom_css",
+      "label": "Custom CSS",
+      "info": "Add custom CSS specifically for this form block."
+    }
+  ]
+}
+{% endschema %}
