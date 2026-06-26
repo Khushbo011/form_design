@@ -39,6 +39,19 @@ export const loader = async ({ request }) => {
   try {
     // ── Single form lookup by Template ID ────────────────────────────────
     if (templateId) {
+      let resolvedTemplateId = templateId;
+      
+      if (templateId === "active") {
+        const selectedTemplate = await prisma.selectedTemplate.findUnique({
+          where: { shop: shop || "" },
+        });
+        if (selectedTemplate && selectedTemplate.templateId) {
+          resolvedTemplateId = selectedTemplate.templateId;
+        } else {
+          resolvedTemplateId = "newsletter-signup"; // Fallback
+        }
+      }
+
       // Get the shop's active subscription plan
       const subscription = await prisma.storeSubscription.findUnique({
         where: { shop: shop || "" },
@@ -48,7 +61,7 @@ export const loader = async ({ request }) => {
       console.log("[Storefront API: Current merchant plan] Shop:", shop, "Plan:", currentPlan);
 
       // Find the template definition to get fields, submitText, etc.
-      const template = FORM_TEMPLATES.find((t) => t.id === templateId);
+      const template = FORM_TEMPLATES.find((t) => t.id === resolvedTemplateId);
 
       // Available templates based on plan
       const availableTemplates = FORM_TEMPLATES.filter((t) => {
@@ -78,7 +91,7 @@ export const loader = async ({ request }) => {
         return new Response(
           JSON.stringify({ 
             error: "Plan Restriction",
-            message: `The selected template (${template ? template.name : templateId}) is only available on the ${template ? template.type.toUpperCase() : 'Premium'} subscription. Please upgrade your plan in the Form Design app.`,
+            message: `The selected template (${template ? template.name : resolvedTemplateId}) is only available on the ${template ? template.type.toUpperCase() : 'Premium'} subscription. Please upgrade your plan in the Form Design app.`,
             isPlanRestricted: true,
             currentPlan: currentPlan,
             requiredPlan: template ? template.type : "starter"
@@ -90,7 +103,7 @@ export const loader = async ({ request }) => {
       const publishedForm = await prisma.publishedForm.findFirst({
         where: {
           shop: shop || undefined,
-          templateId: templateId,
+          templateId: resolvedTemplateId,
         },
         orderBy: { createdAt: "desc" }
       });
@@ -101,7 +114,7 @@ export const loader = async ({ request }) => {
         // Fallback: If no publishedForm exists in database yet for this template, 
         // return the default static template layout directly so it works instantly!
         if (template) {
-          console.log("[Storefront API] Serving default static template config for:", templateId);
+          console.log("[Storefront API] Serving default static template config for:", resolvedTemplateId);
           return new Response(
             JSON.stringify({
               id: `default-${template.id}`,
@@ -117,7 +130,7 @@ export const loader = async ({ request }) => {
         }
 
         return new Response(
-          JSON.stringify({ error: "Form template not found", templateId }),
+          JSON.stringify({ error: "Form template not found", templateId: resolvedTemplateId }),
           { status: 404, headers }
         );
       }
@@ -128,7 +141,7 @@ export const loader = async ({ request }) => {
           ? JSON.parse(publishedForm.configData)
           : {};
       } catch (e) {
-        console.error("Failed to parse configData for templateId", templateId, e);
+        console.error("Failed to parse configData for templateId", resolvedTemplateId, e);
       }
 
       return new Response(
