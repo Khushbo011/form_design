@@ -12,7 +12,7 @@ export const loader = async ({ request, params }) => {
   const shop = session.shop;
   const templateId = params.id;
 
-  let isTestEnv = process.env.NODE_ENV !== "production";
+  let isTestEnv = true; // Set to true to allow testing billing on development stores
   let billingCheck = await billing.check({
     plans: [PLAN_STARTER, PLAN_PRO],
     isTest: isTestEnv,
@@ -107,7 +107,7 @@ export const action = async ({ request }) => {
     try {
       await billing.request({
         plan: planName,
-        isTest: process.env.NODE_ENV !== "production",
+        isTest: true,
         returnUrl,
       });
     } catch (error) {

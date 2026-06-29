@@ -23,7 +23,7 @@ export const loader = async ({ request }) => {
   let billingError = null;
 
   try {
-    let isTestEnv = process.env.NODE_ENV !== "production";
+    let isTestEnv = true; // Set to true to allow testing billing on development stores
     let billingCheck = await billing.check({
       plans: [PLAN_STARTER, PLAN_PRO],
       isTest: isTestEnv,
@@ -143,7 +143,7 @@ export const action = async ({ request }) => {
   // ── Handle downgrade to free ──────────────────────────────────────────
   if (requestedPlan === "free") {
     try {
-      let isTestEnv = process.env.NODE_ENV !== "production";
+      let isTestEnv = true; // Set to true to allow testing billing on development stores
       let billingCheck = await billing.check({
         plans: [PLAN_STARTER, PLAN_PRO],
         isTest: isTestEnv,
@@ -161,7 +161,7 @@ export const action = async ({ request }) => {
           if (sub.status === "ACTIVE" || sub.status === "active" || sub.status === "ACCEPTED") {
             await billing.cancel({
               subscriptionId: sub.id,
-              isTest: process.env.NODE_ENV !== "production",
+              isTest: true,
               prorate: true,
             });
             console.log(`[Billing] Cancelled subscription "${sub.name}" for ${shop}`);
@@ -209,7 +209,7 @@ export const action = async ({ request }) => {
   try {
     await billing.request({
       plan: planName,
-      isTest: process.env.NODE_ENV !== "production",
+      isTest: true,
       returnUrl,
     });
   } catch (error) {
